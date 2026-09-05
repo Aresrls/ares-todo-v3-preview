@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="it" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ARES To-Do V3 — Demo UX</title>
+  <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="anteprima.css">
+</head>
+<body>
+<div class="anteprima-barra" role="note"><strong>ANTEPRIMA STATICA &mdash; DEMO GIA' APPROVATA</strong><span>Copia <strong>byte per byte</strong> della demo di riferimento, qui per confronto. Dati <strong>FITTIZI</strong>.</span><span class="anteprima-prov">provenienza <code>127895a733b8e3cc869f8b0cc13c648c31579b77</code> &middot; ramo <code>demo/ares-todo-v3-ux-20260903</code></span><a class="anteprima-casa" href="../index.html">Indice</a></div>
+  <header class="shell" aria-label="Barra ARES">
+    <a class="brand" href="#" aria-label="ARES, panoramica">
+      <span class="brand-mark" aria-hidden="true">A</span>
+      <span>ARES<small>ENTERPRISE</small></span>
+    </a>
+    <nav class="global-nav" aria-label="Navigazione principale">
+      <a href="#">Panoramica</a>
+      <a class="active" href="#">Operazioni</a>
+      <a href="#">Vendite e clienti</a>
+      <a href="#">Catalogo e acquisti</a>
+      <a href="#">Sistema</a>
+    </nav>
+    <div class="shell-actions">
+      <button class="icon-button" id="searchButton" aria-label="Cerca" title="Cerca (/)" data-icon="search"></button>
+      <button class="icon-button" id="themeButton" aria-label="Passa al tema scuro" title="Cambia tema" data-icon="moon"></button>
+      <button class="notification" aria-label="17 notifiche" data-icon="bell"><span>17</span></button>
+      <button class="profile" aria-label="Menu di Daniele">
+        <span class="avatar">DG</span><span class="profile-copy"><b>Daniele</b><small>Amministratore</small></span><span data-icon="chevron"></span>
+      </button>
+    </div>
+  </header>
+
+  <div class="module-bar">
+    <button class="mobile-menu" id="mobileMenu" aria-label="Apri viste" data-icon="menu"></button>
+    <div><strong>To-Do</strong><span>Centro attività</span></div>
+    <button class="quick-add" id="quickAdd"><span data-icon="plus"></span> Nuova attività <kbd>Q</kbd></button>
+  </div>
+
+  <main class="workspace">
+    <aside class="views" id="viewsPanel" aria-label="Viste To-Do">
+      <div class="view-heading">
+        <span>Il mio lavoro</span>
+        <button class="plain-icon" aria-label="Riduci pannello" data-icon="sidebar"></button>
+      </div>
+      <nav class="view-nav">
+        <button class="selected" data-filter="inbox"><span data-icon="inbox"></span>Inbox <b>15</b></button>
+        <button data-filter="today"><span data-icon="sun"></span>Oggi <b>4</b></button>
+        <button data-filter="upcoming"><span data-icon="calendar"></span>Prossimi <b>8</b></button>
+        <button data-filter="overdue"><span data-icon="alert"></span>Scaduti <b class="danger">3</b></button>
+        <button data-filter="assigned"><span data-icon="user"></span>Assegnati a me <b>11</b></button>
+        <button data-filter="sent"><span data-icon="send"></span>Inviati da me <b>6</b></button>
+        <button data-filter="done"><span data-icon="check"></span>Completati</button>
+      </nav>
+
+      <div class="view-heading section-heading"><span>Progetti</span><button class="plain-icon" aria-label="Nuovo progetto" data-icon="plus"></button></div>
+      <nav class="project-nav">
+        <button><i class="dot coral"></i>Operazioni <b>8</b></button>
+        <button><i class="dot blue"></i>Marketplace <b>5</b></button>
+        <button><i class="dot amber"></i>Amministrazione <b>2</b></button>
+        <button><i class="dot green"></i>Sviluppo ARES</button>
+      </nav>
+      <button class="saved-filter"><span data-icon="filter"></span> Filtri salvati</button>
+      <div class="workload">
+        <div><span>Il tuo carico</span><b>11 aperte</b></div>
+        <div class="loadbar"><i style="width:68%"></i></div>
+        <small>3 prioritarie · 2 in scadenza</small>
+      </div>
+    </aside>
+
+    <section class="task-area" aria-labelledby="pageTitle">
+      <div class="task-header">
+        <div>
+          <div class="eyebrow">GIOVEDÌ 3 SETTEMBRE</div>
+          <h1 id="pageTitle">Inbox</h1>
+          <p>Raccogli, assegna e porta avanti il lavoro senza perdere il contesto.</p>
+        </div>
+        <div class="task-tools">
+          <div class="segmented" role="group" aria-label="Visualizzazione">
+            <button class="active" data-view="list" aria-label="Lista" data-icon="list"></button>
+            <button data-view="board" aria-label="Bacheca" data-icon="board"></button>
+            <button data-view="calendar" aria-label="Calendario" data-icon="calendar"></button>
+          </div>
+          <button class="tool-button" id="filterButton"><span data-icon="sliders"></span><span>Filtra</span><i>2</i></button>
+          <button class="tool-button"><span data-icon="sort"></span><span>Ordina</span></button>
+          <button class="more-button" aria-label="Altre opzioni" data-icon="more"></button>
+        </div>
+      </div>
+
+      <div class="active-filters" id="activeFilters">
+        <button>Non completate <span data-icon="close"></span></button>
+        <button>Priorità alta <span data-icon="close"></span></button>
+        <button class="clear">Azzera filtri</button>
+      </div>
+
+      <div class="inline-add">
+        <button id="inlineAdd"><span data-icon="plus-circle"></span><span>Aggiungi un’attività</span><small>Scrivi titolo, data, progetto e assegnatario</small></button>
+      </div>
+
+      <div class="list-view" id="listView">
+        <div class="group-title"><h2>Priorità</h2><span>3 attività</span></div>
+        <article class="task selected" tabindex="0" data-task="contestare">
+          <button class="complete" aria-label="Completa Contestare addebito Temu"></button>
+          <div class="task-copy">
+            <div class="task-title"><strong>Contestare addebito Temu</strong><span class="priority high">P1</span></div>
+            <p>Preparare documentazione e risposta con le prove dell’ordine.</p>
+            <div class="meta"><span class="overdue" data-icon="calendar">Ieri, 17:00</span><span data-icon="folder">Marketplace</span><span data-icon="tag">Temu</span><span data-icon="subtask">2/4</span></div>
+          </div>
+          <div class="people"><span class="person blue-bg">DG</span><span class="comment-count" data-icon="message">3</span></div>
+        </article>
+        <article class="task" tabindex="0" data-task="tracking">
+          <button class="complete" aria-label="Completa Verificare tracking ordini"></button>
+          <div class="task-copy">
+            <div class="task-title"><strong>Verificare tracking ordini non aggiornati</strong><span class="priority medium">P2</span></div>
+            <p>Controllare gli ordini Amazon senza evento da oltre 48 ore.</p>
+            <div class="meta"><span data-icon="calendar">Oggi, 15:30</span><span data-icon="folder">Operazioni</span><span data-icon="tag">Amazon</span></div>
+          </div>
+          <div class="people"><span class="person violet-bg">FG</span><span class="comment-count" data-icon="message">1</span></div>
+        </article>
+        <article class="task" tabindex="0" data-task="fatture">
+          <button class="complete" aria-label="Completa Controllare fatture"></button>
+          <div class="task-copy">
+            <div class="task-title"><strong>Controllare fatture fornitori di agosto</strong><span class="priority medium">P2</span></div>
+            <div class="meta"><span data-icon="calendar">Oggi</span><span data-icon="folder">Amministrazione</span><span data-icon="paperclip">2</span></div>
+          </div>
+          <div class="people"><span class="person amber-bg">JT</span></div>
+        </article>
+
+        <div class="group-title later"><h2>Da pianificare</h2><span>4 attività</span></div>
+        <article class="task" tabindex="0" data-task="catalogo">
+          <button class="complete" aria-label="Completa Aggiornare catalogo Pratesi"></button>
+          <div class="task-copy">
+            <div class="task-title"><strong>Aggiornare disponibilità catalogo Pratesi</strong></div>
+            <p>Verificare il nuovo flusso immagini prima della sincronizzazione.</p>
+            <div class="meta"><span data-icon="calendar">Domani</span><span data-icon="folder">Marketplace</span><span data-icon="tag">Catalogo</span><span data-icon="subtask">1/3</span></div>
+          </div>
+          <div class="people"><span class="person blue-bg">DG</span></div>
+        </article>
+        <article class="task" tabindex="0" data-task="report">
+          <button class="complete" aria-label="Completa Preparare report vendite"></button>
+          <div class="task-copy">
+            <div class="task-title"><strong>Preparare report vendite settimanale</strong></div>
+            <div class="meta"><span data-icon="repeat">Ogni lunedì, 09:00</span><span data-icon="folder">Operazioni</span></div>
+          </div>
+          <div class="people"><span class="person blue-bg">DG</span></div>
+        </article>
+      </div>
+
+      <div class="board-view" id="boardView" hidden>
+        <section><header><b>Da fare</b><span>3</span></header><div class="board-card"><i class="p1"></i><b>Contestare addebito Temu</b><small>Scaduta · Marketplace</small></div><div class="board-card"><i class="p2"></i><b>Controllare fatture fornitori</b><small>Oggi · Amministrazione</small></div><button>+ Aggiungi attività</button></section>
+        <section><header><b>In corso</b><span>2</span></header><div class="board-card"><i class="p2"></i><b>Verificare tracking ordini</b><small>Oggi · Operazioni</small></div><button>+ Aggiungi attività</button></section>
+        <section><header><b>In attesa</b><span>1</span></header><div class="board-card"><b>Aggiornare catalogo Pratesi</b><small>Domani · Marketplace</small></div><button>+ Aggiungi attività</button></section>
+      </div>
+
+      <div class="calendar-view" id="calendarView" hidden>
+        <div class="calendar-head"><button data-icon="chevron-left" aria-label="Settimana precedente"></button><strong>31 agosto – 6 settembre 2026</strong><button data-icon="chevron-right" aria-label="Settimana successiva"></button></div>
+        <div class="week"><div><b>Lun<small>31</small></b></div><div><b>Mar<small>1</small></b></div><div><b>Mer<small>2</small></b><article class="cal-task danger-cal">Contestare addebito Temu <small>17:00</small></article></div><div class="today-col"><b>Gio<small>3</small></b><article class="cal-task">Tracking ordini <small>15:30</small></article><article class="cal-task amber-cal">Fatture fornitori</article></div><div><b>Ven<small>4</small></b><article class="cal-task">Catalogo Pratesi</article></div><div><b>Sab<small>5</small></b></div><div><b>Dom<small>6</small></b></div></div>
+      </div>
+    </section>
+  </main>
+
+  <aside class="detail" id="detailPanel" aria-label="Dettaglio attività" aria-hidden="false">
+    <div class="detail-top">
+      <span class="project-path"><i class="dot blue"></i> Marketplace / Contestazioni</span>
+      <div><button class="plain-icon" aria-label="Copia collegamento" data-icon="link"></button><button class="plain-icon" aria-label="Altre azioni" data-icon="more"></button><button class="plain-icon" id="closeDetail" aria-label="Chiudi dettaglio" data-icon="close"></button></div>
+    </div>
+    <div class="detail-scroll">
+      <div class="detail-title-row"><button class="complete large" aria-label="Completa attività"></button><div><h2>Contestare addebito Temu</h2><span class="priority high">P1 · Urgente</span></div></div>
+      <div class="description" contenteditable="true" aria-label="Descrizione attività">Preparare la contestazione allegando ordine, tracking e comunicazioni del cliente. Verificare l’importo prima dell’invio.</div>
+
+      <dl class="properties">
+        <div><dt data-icon="user">Responsabile</dt><dd><span class="person blue-bg">DG</span> Daniele Giustini <button data-icon="chevron"></button></dd></div>
+        <div><dt data-icon="calendar">Pianificata</dt><dd class="overdue">Ieri, 17:00</dd></div>
+        <div><dt data-icon="flag">Scadenza</dt><dd>4 settembre, 12:00</dd></div>
+        <div><dt data-icon="bell">Promemoria</dt><dd>30 minuti prima</dd></div>
+        <div><dt data-icon="tag">Etichette</dt><dd><span class="tag">Temu</span><span class="tag">Contestazione</span></dd></div>
+      </dl>
+
+      <section class="detail-section">
+        <div class="section-title"><h3>Checklist</h3><span>2 di 4</span></div>
+        <div class="progress"><i></i></div>
+        <label class="check-row done"><input type="checkbox" checked><span>Recuperare il numero ordine</span></label>
+        <label class="check-row done"><input type="checkbox" checked><span>Verificare l’importo addebitato</span></label>
+        <label class="check-row"><input type="checkbox"><span>Allegare tracking e conversazione</span></label>
+        <label class="check-row"><input type="checkbox"><span>Inviare la contestazione</span></label>
+        <button class="add-subtask" data-icon="plus">Aggiungi sottoattività</button>
+      </section>
+
+      <section class="detail-section attachments">
+        <div class="section-title"><h3>Allegati</h3><span>2</span></div>
+        <div class="file"><span data-icon="file">PDF</span><div><b>ordine-temu.pdf</b><small>842 KB · Daniele</small></div><button data-icon="download" aria-label="Scarica"></button></div>
+        <div class="file"><span data-icon="image">JPG</span><div><b>tracking.jpg</b><small>218 KB · Daniele</small></div><button data-icon="download" aria-label="Scarica"></button></div>
+      </section>
+
+      <section class="detail-section activity">
+        <div class="section-title"><h3>Attività e commenti</h3><button>Mostra tutto</button></div>
+        <div class="activity-row"><span class="person violet-bg">FG</span><p><b>Francesco</b> ha assegnato l’attività a Daniele.<small>Ieri, 16:42</small></p></div>
+        <div class="activity-row"><span class="person blue-bg">DG</span><p><b>Daniele</b> Ho recuperato l’ordine. Manca soltanto la risposta del cliente.<small>Oggi, 09:18</small></p></div>
+      </section>
+    </div>
+    <div class="comment-box"><button data-icon="paperclip" aria-label="Allega file"></button><input placeholder="Scrivi un commento o usa @ per menzionare…"><button class="send-comment" data-icon="send" aria-label="Invia commento"></button></div>
+  </aside>
+
+  <dialog id="quickDialog">
+    <form method="dialog" class="quick-form">
+      <div class="dialog-head"><span data-icon="spark"></span><b>Nuova attività</b><button value="cancel" aria-label="Chiudi" data-icon="close"></button></div>
+      <input id="quickTitle" class="quick-title" placeholder="Cosa c’è da fare?" autocomplete="off">
+      <textarea placeholder="Descrizione (facoltativa)"></textarea>
+      <div class="smart-hint">Prova: “Controlla reso domani alle 10 #Marketplace +Francesco p1”</div>
+      <div class="quick-options"><button type="button" data-icon="calendar">Oggi</button><button type="button" data-icon="flag">Priorità</button><button type="button" data-icon="user">Assegna</button><button type="button" data-icon="folder">Inbox</button><button type="button" data-icon="bell">Promemoria</button></div>
+      <div class="dialog-actions"><span><kbd>Esc</kbd> chiude</span><button value="cancel">Annulla</button><button id="createTask" value="default" class="primary">Aggiungi attività</button></div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"><span data-icon="check"></span><span>Attività completata</span><button id="undo">Annulla</button></div>
+  <div class="mobile-overlay" id="mobileOverlay"></div>
+  <script src="app.js"></script>
+<script src="anteprima.js" defer></script>
+</body>
+</html>

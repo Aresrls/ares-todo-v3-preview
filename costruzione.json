@@ -1,0 +1,14 @@
+{
+ "pagine": 140,
+ "link_vivi": 2112,
+ "link_morti": 4696,
+ "moduli_inerti": 358,
+ "form_rimasti": 0,
+ "residui": [],
+ "cap": 200,
+ "cap_raggiunto": false,
+ "profondita": 2,
+ "oltre_profondita": 276,
+ "sha": "c91b3e89e4e5dd9e0908355d98832a978fc63b07",
+ "ramo": "lane/todo-v3-correzioni-20260905"
+}

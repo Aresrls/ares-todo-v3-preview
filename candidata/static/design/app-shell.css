@@ -1,0 +1,1508 @@
+/* ARES App Shell — navigazione ORIZZONTALE, e il contenuto mai coperto.
+ *
+ * IL PRINCIPIO, CHE E' UNO SOLO
+ * -----------------------------
+ * La navigazione e' una **banda in cima al flusso**, non un elemento
+ * sovrapposto. Fino al 2026-09-02 era una colonna della griglia, e il
+ * principio era lo stesso per la stessa ragione: `position: fixed` con un
+ * `z-index` alto risolverebbe il problema visivo e ne aprirebbe un altro —
+ * qualunque superficie densa finirebbe sotto, e la correzione sarebbe una
+ * gara di `z-index` contro `todo_v2/css/topnav.css` (50),
+ * `detail-toolbar.css` (90) e `create-todo.css` (1200). Una banda nel flusso
+ * non disputa quella gara: lo spazio che occupa e' spazio che il contenuto
+ * non ha mai avuto.
+ *
+ * CONSEGUENZA MISURATA DEL PASSAGGIO: `todo_v2/css/shell.css` e
+ * `taxonomy.css` calcolano `min-height: calc(100vh - 72px)` su una costante
+ * che descriveva l'altezza della sola testata. Sono file di UN'ALTRA LANE e
+ * non si toccano. La banda dei gruppi aggiunge 39px sopra il contenuto,
+ * quindi quel `min-height` eccede la finestra di altrettanto: la pagina
+ * scorre in VERTICALE un po' di piu'. Lo scorrimento vietato e' quello
+ * ORIZZONTALE, misurato a zero su tutte e cinque le larghezze.
+ *
+ * IL MENU DELL'AVATAR E' TORNATO, e il commento che diceva il contrario
+ * non vale piu'. Era stato tolto perche' apriva sopra la colonna del
+ * dettaglio del workspace To-Do; ora ci sta di nuovo, ma solo QUANDO E'
+ * APERTO alza il `z-index` della barra in alto (classe
+ * `shell-account-open`, messa dal solo gestore che apre il pannello).
+ * A menu chiuso il pannello e' `hidden`, quindi non esiste per
+ * `elementFromPoint` e non copre nulla: e' la proprieta' che il banco
+ * misura, ed e' vera per costruzione e non per `z-index`.
+ *
+ * Resta invece vero il resto: il menu delle NOTIFICHE non torna. La sua
+ * voce vive nel registro dei moduli come le altre.
+ *
+ * PERCHE' NESSUN `!important`
+ * ---------------------------
+ * Questo foglio e' caricato per ultimo in `app_base.html`. A parita' di
+ * specificita' vince la cascata, e la specificita' e' pari perche' i
+ * selettori sono gli stessi che usano `layout.css` e `dashboard.css`.
+ * Gli unici `!important` che restano nel progetto sono quelli gia'
+ * presenti nei blocchi mobile di `dashboard.css`, che questa lane non
+ * tocca: il ridisegno mobile non e' qui.
+ */
+
+/* -------------------------------------------------------------------
+ * LA COLONNA NON C'E' PIU' — Fase 2, 2026-09-02
+ * -------------------------------------------------------------------
+ * Qui vivevano `--shell-sidebar-expanded/compact/w`, `.shell` a due
+ * colonne, `.sidebar`, la banda del marchio in cima alla colonna, il
+ * comando di collasso `.shell-collapse`, la navigazione VERTICALE e i
+ * dieci blocchi `html[data-ares-sidebar="COMPACT"]`.
+ *
+ * Sono stati TOLTI, non spenti. Una regola che veste un nodo che nessun
+ * template spedisce e' codice morto che il prossimo lettore crede vivo,
+ * ed e' la strada per cui la colonna puo' rientrare senza che nessuno se
+ * ne accorga. Il cookie `ares_sidebar` e l'attributo `data-ares-sidebar`
+ * restano scritti dal server finche' il kernel non li toglie: qui non
+ * governano piu' nulla, e nessuna regola li consuma.
+ *
+ * Cio' che SOPRAVVIVE, e sopravvive apposta, sono le PROPRIETA' del
+ * marchio — piastra chiara, contrasto 8.58:1, logo come sfondo CSS — che
+ * si sono spostate insieme al nodo, in `.shell-brandbar` piu' sotto.
+ * Erano misure, non decorazione della colonna.
+ */
+
+/* -------------------------------------------------------------------
+ * IL MENU DELL'AVATAR — in alto a SINISTRA
+ * -------------------------------------------------------------------
+ * Ripristinato da `938bd4d`. Le classi sono `shell-account-*` e non
+ * `account-*` di proposito: le regole legacy in `dashboard.css` fissano
+ * i colori e hanno un blocco «Dark Fix» pieno di `!important`, cioe'
+ * colori che non passano dal tema. Qui ogni colore e' un RUOLO, che e'
+ * la condizione perche' i due temi restino provabili.
+ *
+ * SUL COPRIRE IL CONTENUTO, che e' la ragione per cui questo menu era
+ * stato tolto: il pannello e' `absolute` dentro la topbar, ma finche' e'
+ * `hidden` non esiste per `elementFromPoint`, quindi a menu chiuso non
+ * copre nulla — e' la proprieta' che il banco misura. Ad menu APERTO
+ * deve stare sopra, e per questo il `z-index` della topbar viene alzato
+ * SOLO in quel momento, dalla classe `shell-account-open`: alzarlo
+ * sempre avrebbe messo la barra sopra la modale di creazione To-Do
+ * (`z-index: 1200`), che e' un difetto diverso e peggiore.
+ */
+.shell-account-menu {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.shell-account-trigger {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 250px;
+  padding: 5px 10px 5px 5px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--c-n-064-a10-bg);
+  color: var(--c-n-096);
+  font: inherit;
+  cursor: pointer;
+}
+
+.shell-account-trigger:hover { background: var(--c-n-064-a14-bg); }
+
+/* `--muted` NON ESISTE nella cascata che questa pagina carica: e'
+ * dichiarato in `src/static/tokens.css`, che `app_base.html` non collega —
+ * il foglio dei token e' `design/tokens.css`, un altro file. Queste due
+ * righe erano qui da prima di questa lane e consumavano quindi un token
+ * INDEFINITO: `color: var(--muted)` diventa invalido, e per una proprieta'
+ * ereditata «invalido» vuol dire EREDITA. Il colore che arrivava non era
+ * scelto da nessuno.
+ * E' la stessa famiglia del ripiego dietro un nome che nessuno definira',
+ * con una faccia in piu': li' il ripiego vince per sempre, qui non c'e'
+ * nemmeno un ripiego e il valore lo decide il genitore.
+ * `--c-n-072` e' ridefinito in ENTRAMBI i blocchi di `design/tokens.css`. */
+.shell-account-chevron {
+  flex: 0 0 auto;
+  color: var(--c-n-072);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.shell-account-badge { flex: 0 0 auto; }
+
+.shell-account-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  /* A DESTRA, che e' dove il pannello e' sempre stato prima di `f6d5d70`.
+   *
+   * QUESTA E' L'INTERA CORREZIONE DI POSIZIONE. Il componente non e' stato
+   * riscritto e non e' stato ripreso da un commit vecchio: e' quello che
+   * gia' funzionava, e cambia il suo ancoraggio. Ancorare a `right: 0`
+   * invece che a `left: 0` e' obbligatorio ora che il bottone sta in fondo
+   * alla riga: da sinistra, un pannello largo 288px partirebbe dal bordo
+   * sinistro del bottone e finirebbe **fuori dalla finestra** a destra. */
+  right: 0;
+  left: auto;
+  width: 288px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  /* IL PANNELLO E' UNA SUPERFICIE OPACA, E LA PAROLA E' LETTERALE.
+   *
+   * `--c-n-008` vale `#091726` nel tema scuro e `#f6f8fa` nel chiaro:
+   * ESADECIMALI A SEI CIFRE, cioe' alfa 1 in entrambi. Non e' un dettaglio
+   * di gusto — l'antenato `.enterprise-topbar` ha `backdrop-filter:
+   * blur(18px)`, quindi qualunque trasparenza di questo nodo non mostra il
+   * contenuto sotto: lo mostra SFOCATO, che e' il modo in cui una
+   * trasparenza si presenta come «pannello semitrasparente» invece che come
+   * un buco. E' cosi' che il difetto e' stato descritto dal proprietario.
+   *
+   * PERCHE' NON C'E' UN RIPIEGO `var(--c-n-008, #091726)`.
+   * Un ripiego renderebbe questo nodo verde anche quando il foglio dei
+   * token non arriva, e cancellerebbe l'unico segnale che il foglio non
+   * e' arrivato. E' gia' stato il difetto della r3 di News. Il legame
+   * fra questo nodo e il foglio che lo veste e' invece sorvegliato da
+   * `tests/test_token_della_shell.py` (il token esiste) e da
+   * `tests/test_versione_dei_fogli.py` (il foglio che lo dichiara viene
+   * chiesto con un indirizzo nuovo quando cambia).
+   *
+   * MISURATO in Chromium, ai due poli, con una spia `rgb(255,0,255)` a
+   * tutta finestra sotto il pannello: con i token, `2` pixel di spia su
+   * 105120 (l'antialiasing dei quattro angoli arrotondati); senza i
+   * token, `94564`. */
+  background: var(--c-n-008);
+  box-shadow: 0 1px 2px var(--c-n-008-a38-bg);
+  /* `1` e non un numero grande: il contesto di impilamento lo apre
+   * `.shell-topbar.shell-account-open` con `z-index: 1300`, che passa
+   * sopra la modale di creazione To-Do (1200) SOLO mentre il menu e'
+   * aperto. Dentro quel contesto al pannello basta stare sopra i propri
+   * fratelli. Misurato: `elementFromPoint` risponde «pannello» al centro
+   * e ai quattro quarti, in entrambi i temi. */
+  z-index: 1;
+}
+
+.shell-account-panel[hidden] { display: none; }
+
+.shell-account-head {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 14px 12px 12px;
+  border-radius: 8px;
+  background: var(--c-n-064-a10-bg);
+  text-align: center;
+}
+
+.shell-account-head strong {
+  margin-top: 6px;
+  font-size: 14px;
+}
+
+/* `--c-n-072` E NON `--muted`, E LA RAGIONE E' UNA MISURA.
+ *
+ * `--muted` vive in `static/tokens.css`, che ha un `:root` SOLO: quel
+ * foglio non conosce i temi, e i suoi valori restano quelli del tema
+ * scuro anche nel chiaro. Misurato in Chromium sul pannello chiaro
+ * (`#f6f8fa`): `#9fb0c8` da' **2.07:1**, cioe' sotto ogni soglia — la
+ * riga dell'indirizzo e quella dello username erano quasi invisibili.
+ * Nel tema scuro lo stesso valore da' 7.4:1, ed e' per questo che il
+ * difetto si vedeva in UN tema solo, che e' peggio di vederlo sempre.
+ *
+ * `--c-n-072` e' il token del sistema che si INVERTE: `#9fb0c8` nello
+ * scuro — cioe' esattamente il colore di oggi, il tema scuro non cambia
+ * di un pixel — e `#475366` nel chiaro. Misure: **8.19:1** e **7.31:1**,
+ * entrambe sopra AAA. */
+.shell-account-head small,
+.shell-account-head em {
+  max-width: 240px;
+  overflow: hidden;
+  color: var(--c-n-072);
+  font-size: 11.5px;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-account-links {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 0 0;
+}
+
+.shell-account-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--c-n-096);
+  font: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.shell-account-link:hover { background: var(--c-n-064-a14-bg); }
+
+.shell-account-link.active {
+  background: linear-gradient(135deg, var(--c-b-056-a32-bg), var(--c-b-048-a28-bg));
+  font-weight: 600;
+}
+
+/* L'AZIONE DEL COMMUTATORE DI TEMA, a fine riga.
+ *
+ * Il bottone dice due cose diverse: a sinistra lo STATO (simbolo +
+ * «Tema scuro»/«Tema chiaro»), qui a destra l'AZIONE («Passa a
+ * chiaro»/«Passa a scuro»). Una sola delle due lascia sempre in dubbio
+ * se l'etichetta descriva il presente o la destinazione, ed e' il
+ * dubbio per cui «Cambia tema» non bastava.
+ *
+ * `margin-left: auto` e non `justify-content: space-between` sul
+ * genitore: il genitore e' `.shell-account-link`, condiviso con le voci
+ * che NON hanno un terzo figlio, e cambiarne la distribuzione
+ * sposterebbe anche quelle.
+ *
+ * E' uno `<span>`, non un `<button>`: la regola globale
+ * `dashboard.css:317` — `button { width: 100%; padding: 15px 18px }` —
+ * non lo tocca. Il bottone che lo contiene, invece, la incontra, e per
+ * questo `.shell-account-link` dichiara sia `width` sia `padding`. */
+.shell-theme-action {
+  margin-left: auto;
+  padding-left: 10px;
+  color: var(--c-n-072);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.shell-theme-toggle:hover .shell-theme-action,
+.shell-theme-toggle:focus-visible .shell-theme-action {
+  color: var(--c-n-096);
+}
+
+.shell-account-logout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 9px 10px;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 10px 10px;
+  /* Stessa famiglia di difetto di `--muted`: `--red` non conosce i temi.
+   * `#ef4444` sul pannello chiaro da' **3.53:1**, sotto AA. `--c-r-060`
+   * e' il rosso del sistema che si inverte: `#ef4444` nello scuro (il
+   * tema scuro resta identico) e `#c01010` nel chiaro. Misure: 4.80:1 e
+   * **5.94:1**. */
+  color: var(--c-r-060);
+  font-size: 13.5px;
+  text-decoration: none;
+}
+
+.shell-account-logout:hover { background: var(--c-n-064-a14-bg); }
+
+.shell-identity-text {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.shell-identity-text strong {
+  display: block;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shell-identity-text small {
+  display: block;
+  font-size: 11px;
+  color: var(--c-n-072);
+}
+
+.shell-badge {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+/* -------------------------------------------------------------------
+ * MODALITA' COMPATTA
+ * -------------------------------------------------------------------
+ * Solo icone. Le etichette spariscono con `display: none` e non con
+ * `width: 0`: una etichetta larga zero resta nell'albero di
+ * accessibilita' e i lettori di schermo la leggono due volte, una dal
+ * testo e una dal `title`.
+ */
+
+/* -------------------------------------------------------------------
+ * LA TESTATA GLOBALE — pagina · notizie · account
+ * -------------------------------------------------------------------
+ * Conserva l'altezza di prima (76px minimi, `dashboard.css`), perche'
+ * altri fogli la danno per buona: `todo_v2/css/shell.css` calcola
+ * `min-height: calc(100vh - 72px)`. Cambia cio' che contiene.
+ *
+ * TRE AREE SOTTO UN `space-between` CHE NON SI PUO' TOGLIERE.
+ *
+ * `dashboard.css:5718` e `:5764` dichiarano `justify-content:
+ * space-between !important` su `.enterprise-topbar`, due volte, in due
+ * blocchi chiamati «ARES Notification Bell final placement» e «clean
+ * final fix». Un `!important` non lo batte ne' la specificita' ne'
+ * l'ordine di caricamento: l'unica risposta possibile sarebbe un secondo
+ * `!important`, e questo foglio si e' dato la regola di non averne
+ * nemmeno uno. Quindi qui NON si dichiara `justify-content`: una riga
+ * che perde la cascata e' peggio di una riga assente, perche' chi legge
+ * il foglio crede che valga.
+ *
+ * IL LAYOUT E' DETERMINISTICO LO STESSO, ed e' il motivo per cui tre
+ * aree si possono avere comunque:
+ *
+ *   - con le notizie, i figli sono tre e quello centrale cresce
+ *     (`flex: 1 1 0`): lo spazio libero e' ZERO, e `space-between` non ha
+ *     niente da distribuire. Il risultato coincide con un allineamento a
+ *     sinistra;
+ *   - senza notizie il guscio e' `display: none`, i figli tornano due, e
+ *     l'area destra porta `margin-left: auto`: nome della pagina a
+ *     sinistra, account a destra, che e' dove `space-between` li avrebbe
+ *     messi comunque.
+ *
+ * Il vincolo ereditato era vero; era la rinuncia a tre aree a non essere
+ * obbligatoria. La differenza fra le due cose e' costata una misura, ed
+ * e' il motivo per cui `tests/test_testata_globale.py` RISOLVE la
+ * cascata invece di cercare stringhe nei fogli.
+ */
+.shell-topbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 16px;
+}
+
+/* L'area di sinistra: il nome della pagina, e nient'altro. Il marchio non
+ * vive piu' qui.
+ * `flex: 0 1 auto` con `min-width: 0`: puo' cedere spazio, e cede per prima
+ * — il nome della pagina ha un degrado suo (sotto i 1040px sparisce del
+ * tutto, vedi in fondo al foglio), mentre un titolo di notizia tagliato a
+ * meta' non lo ha. */
+.shell-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* IL MARCHIO NON E' PIU' IN QUESTA RIGA, e le sue regole sono sparite con
+ * lui: `.shell-brand-mark` (la tessera blu da 40px) e `.shell-brand-text`
+ * («ARES» + «Command Center») non esistono piu' in nessun foglio. Lasciarle
+ * qui «per sicurezza» avrebbe significato tenere in vita lo stile di un nodo
+ * che nessun template spedisce — cioe' la strada per cui il vecchio marchio
+ * puo' rientrare senza che nessuno se ne accorga.
+ *
+ * `.shell-brand` esiste ancora, ma e' un'altra cosa e sta altrove: e' il
+ * collegamento dentro la banda in cima alla barra laterale, definito piu'
+ * sopra in questo stesso foglio.
+ */
+
+/* LA STRISCIA DENTRO LA TESTATA.
+ *
+ * `flex: 1 1 0` con `min-width: 0`: prende cio' che avanza, e — questo e'
+ * il punto — puo' anche STRINGERSI. Senza `min-width: 0` un elemento di
+ * flex non scende sotto la larghezza del proprio contenuto, e un nastro
+ * di venti titoli avrebbe spinto l'avatar fuori dalla finestra invece di
+ * ritagliarsi.
+ *
+ * Quando non ci sono notizie il guscio si mette `hidden` da solo e questo
+ * elemento smette di esistere per il flex: le altre due aree si
+ * riprendono la riga senza che nessuna regola debba prevederlo. E' anche
+ * il motivo per cui la striscia e' un figlio DIRETTO di `<header>`: un
+ * involucro intermedio avrebbe conservato il posto da vuoto.
+ *
+ * Il fondo e il bordo restano quelli del componente — cambiano solo la
+ * forma (pillola invece di riga a tutta larghezza) e il bordo, che qui
+ * gira tutt'intorno: sotto la testata c'e' gia' il bordo della testata, e
+ * due linee orizzontali a un pixel di distanza si leggono come un errore
+ * di rendering. */
+.shell-topbar .news-ticker {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 1px solid var(--ares-line);
+  border-radius: 999px;
+  padding: 0 14px;
+}
+
+/* L'area di destra: l'account, e null'altro. `margin-left: auto` la
+ * spinge al bordo ANCHE quando la striscia non c'e' — che e' il caso in
+ * cui, senza questa riga, si troverebbe appiccicata al nome della pagina. */
+.shell-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+/* Il pannello aperto deve stare sopra le superfici dense del workspace
+ * To-Do (`topnav` 50, `detail-toolbar` 90, `create-todo` 1200). Alzare
+ * il `z-index` SEMPRE avrebbe messo la barra sopra la modale di
+ * creazione, che e' un difetto peggiore di quello che si vuole evitare:
+ * per questo si alza solo mentre il menu e' aperto. */
+.shell-topbar.shell-account-open {
+  z-index: 1300;
+}
+
+.shell-crumb {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* `font-size` governava un glifo; su un `<svg>` non fa nulla. La misura la
+ * porta `.ao-i` nel foglio del design system. */
+.shell-crumb-icon { flex: 0 0 auto; }
+
+/* L'AVATAR DI DIMENSIONE NORMALE.
+ * `ares-avatar-md` (46px) sarebbe uscito dalla riga: la testata ha 76px
+ * minimi e 16px di padding sopra e sotto. 40px e' la misura piu' grande
+ * che ci sta senza far crescere la testata oltre gli 82px, e resta il
+ * doppio abbondante di un distintivo. La classe del design system e'
+ * conservata (e' lei a dare forma, bordo e ripiego con le iniziali):
+ * cambia la sola misura, e solo dentro il grilletto. */
+.shell-account-trigger .ares-avatar {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  font-size: 15px;
+}
+
+/* -------------------------------------------------------------------
+ * IL DEGRADO DELLA TESTATA
+ * -------------------------------------------------------------------
+ * Tre aree su una riga sola hanno bisogno di un ordine di resa esplicito,
+ * altrimenti a finestra stretta vince chi ha il contenuto piu' lungo — di
+ * solito il nastro delle notizie, che e' il meno importante dei tre.
+ *
+ * L'ordine: prima il ruolo sotto il nome, poi il nome della pagina, infine
+ * la striscia intera. L'avatar non sparisce mai.
+ *
+ * Il marchio NON compare piu' in questa scaletta, e non e' una dimenticanza:
+ * vive nella barra laterale, che sotto i 900px esce dallo schermo per conto
+ * suo (`dashboard.css:4248`). Il degrado del marchio e' quindi il degrado
+ * della colonna, ed e' gia' scritto li'.
+ */
+@media (max-width: 1200px) {
+  .shell-identity-text small { display: none; }
+  .shell-topbar { gap: 12px; }
+}
+
+@media (max-width: 1040px) {
+  .shell-crumb { display: none; }
+}
+
+/* 900px E' LA SOGLIA VERA DEL PRODOTTO, non un numero scelto qui:
+ * `dashboard.css:4248` e' il punto in cui la shell passa al disegno mobile —
+ * la barra laterale esce dallo schermo, compare `.mobile-nav-toggle`, e la
+ * testata cambia margini.
+ *
+ * `padding-right` E' UNA CORREZIONE, e va spiegata perche' sembra arbitraria.
+ * Nel disegno mobile `.enterprise-topbar` porta `margin: -18px -18px 22px` e
+ * `padding: 14px`: la testata **sborda di proposito** 18px oltre il bordo
+ * della finestra da entrambi i lati, e il documento ha 18px di scorrimento
+ * orizzontale (misurato SULL'ALBERO DI PARTENZA: a 420px di finestra,
+ * `scrollWidth` 438 contro `clientWidth` 420 — condizione preesistente, non
+ * introdotta qui).
+ *
+ * Finche' l'account stava a SINISTRA la cosa non si vedeva. Ancorandolo a
+ * destra finirebbe 4px oltre il bordo visibile: misurato, 424 su una finestra
+ * da 420. Quattro pixel bastano a tagliare l'avatar.
+ *
+ * Questi 18px di padding riportano il contenuto della testata dentro la
+ * finestra senza toccare i margini di `dashboard.css` — cioe' senza mettere
+ * mano al disegno mobile, che non e' il lavoro di questa lane. Lo scorrimento
+ * orizzontale preesistente resta quello che era: qui si impedisce solo che
+ * l'account ci finisca dentro. */
+@media (max-width: 900px) {
+  .shell-topbar { padding-right: 18px; }
+
+  /* LO SCORRIMENTO ORIZZONTALE DI OGNI PAGINA, e la sua causa esatta.
+   *
+   * `dashboard.css:4330` da' alla testata `margin: -18px -18px 22px` sotto i
+   * 900 px. Un margine negativo orizzontale serve a una cosa sola: annullare
+   * il padding del genitore, per far arrivare la barra ai bordi. Funziona se
+   * i due numeri coincidono. Qui non coincidono a nessuna larghezza:
+   *
+   *     larghezza   padding di .main   margine della testata   esito
+   *      >= 901        36px                 -36px              combacia
+   *      821..900      36px                 -18px              rientrata di 18
+   *      <= 820         0px (!important)    -18px              SFONDA di 18
+   *
+   * Sotto gli 820 px `dashboard.css` azzera il padding di `.main` con
+   * `padding: 0 !important` (due volte, righe 7340 e 7780), mentre il
+   * margine negativo resta -18: la testata diventa 36 px piu' larga del
+   * proprio contenitore e la pagina scorre in orizzontale.
+   *
+   * MISURATO, non dedotto: a 768, 390 e 360 px `scrollWidth - clientWidth`
+   * vale **18** su TUTTE E TREDICI le rotte — 78 misure su 130. E' un
+   * difetto solo, moltiplicato per il guscio.
+   *
+   * Perche' l'annullo invece di correggere il numero: i padding di `.main`
+   * sono QUATTRO (36, 24, 12, 0) su tre soglie diverse dentro
+   * `dashboard.css`, e due arrivano con `!important`. Inseguirli con un
+   * secondo numero qui vorrebbe dire riscrivere la stessa tabella in due
+   * fogli, e la prossima modifica ne aggiornerebbe uno solo — che e'
+   * esattamente il modo in cui questa riga e' diventata sbagliata.
+   * Senza bleed la testata segue il contenitore qualunque padding abbia:
+   * un numero in meno da tenere allineato.
+   *
+   * NON tolgo il `margin` da `dashboard.css`: quel foglio si smonta per
+   * ultimo, e i suoi margini verticali (-18 in alto, 22 in basso) servono
+   * ancora. Qui si annulla la sola parte orizzontale, che e' quella rotta. */
+  .shell-topbar { margin-inline: 0; }
+}
+
+@media (max-width: 780px) {
+  /* Sotto questa soglia la riga non regge tre aree: la striscia esce.
+   * Batte la regola di stato del componente per specificita' (due classi
+   * contro una classe e un attributo, e questo foglio arriva dopo), e non
+   * la contraddice: quella dice quando la striscia PUO' esserci, questa
+   * dice dove non ci sta. */
+  .shell-topbar .news-ticker { display: none; }
+  .shell-identity-text { display: none; }
+}
+
+/* -------------------------------------------------------------------
+ * FOCUS
+ * -------------------------------------------------------------------
+ * Un modulo `FOCUS` recupera il margine orizzontale che la Dashboard si
+ * puo' permettere e lui no: il workspace To-Do ha due colonne fisse
+ * (430px e 340px) e quella centrale collassa per prima. Non e' una
+ * modalita' a schermo intero e non nasconde nulla: sposta soltanto lo
+ * spazio dai margini al contenuto.
+ */
+html[data-ares-shell="FOCUS"] .main {
+  padding: 34px 20px 24px;
+}
+
+html[data-ares-shell="FOCUS"] .shell-topbar {
+  min-height: 64px;
+}
+
+/* ===================================================================
+ * FASE 2 — LA NAVIGAZIONE ORIZZONTALE
+ * ===================================================================
+ * Sostituisce la colonna. Due bande appiccicate in cima: la testata
+ * (marchio · briciola · notizie · data · account) e la riga dei sei
+ * gruppi.
+ *
+ * TRE REGOLE CHE QUESTA SEZIONE SI IMPONE, tutte da difetti pagati qui:
+ *
+ * 1. NESSUN `var(--token, ripiego)`, E IL NOME DEVE SEGUIRE IL TEMA.
+ *    La prima stesura di questa sezione consumava `var(--muted)` per il
+ *    testo dei gruppi e per la data, e diceva in questo stesso commento
+ *    che i nomi erano «verificati uno per uno». NON LO ERANO.
+ *    `--muted` esiste — in `src/static/tokens.css`, non in
+ *    `design/tokens.css` — ma e' dichiarato UNA volta sola, `#9fb0c8`,
+ *    e **non segue il tema**. Sul fondo scuro della vecchia colonna
+ *    andava bene; su `--surface`, che in tema chiaro e' bianco, fa
+ *    2,1:1. Il cancello axe l'ha trovato: una violazione
+ *    `color-contrast` su 5 nodi, SOLO in tema chiaro e SOLO alle
+ *    larghezze in cui la banda dei gruppi si vede.
+ *    Un token che esiste e non segue il tema e' peggio di un token
+ *    assente: quello non disegna niente e si nota, questo disegna bene
+ *    in un tema su due. I nomi usati qui sono ora quelli della rampa
+ *    `--c-n-*`, che e' ridefinita in entrambi i blocchi di
+ *    `design/tokens.css`.
+ * 2. OGNI CONTROLLO DICHIARA `width` E `padding`. `dashboard.css:317`
+ *    dichiara `button { width: 100%; padding: 15px 18px }` per ogni
+ *    bottone del prodotto, e quella riga ha gia' prodotto QUATTRO
+ *    difetti distinti — fra cui una finestra di nastro larga zero con
+ *    venti titoli dentro. Chi ne dimentica una eredita quella regola.
+ * 3. BERSAGLI DA ALMENO 24px (WCAG 2.5.8) e testo mai sotto 11px.
+ * =================================================================== */
+
+/* La griglia a due colonne non esiste piu': una sola colonna, e la
+ * `transition` sulle colonne se n'e' andata con lei. */
+.shell {
+  display: block;
+}
+
+/* UN SOLO ELEMENTO APPICCICATO, che contiene entrambe le bande.
+ *
+ * LA PRIMA STESURA LE TENEVA FRATELLE, entrambe `sticky`, e ancorava la
+ * seconda con `top: var(--shell-topbar-h)` — un token che avevo scritto a
+ * 56px. Il cancello ha misurato la testata RESA: **88px**, perche'
+ * `dashboard.css` le da' `min-height: 76px` piu' 16px di padding e un bordo.
+ * Scorrendo, la banda dei gruppi sarebbe scivolata SOTTO la testata per 32px.
+ *
+ * Il rimedio non e' correggere il numero: **un'altezza resa non si legge da
+ * CSS**, quindi qualunque costante scritta qui sarebbe giusta oggi e falsa al
+ * primo ritocco di un altro foglio — e il sintomo comparirebbe solo
+ * scorrendo, cioe' dove nessuna prova statica guarda. Con l'involucro non
+ * c'e' nessun numero da tenere allineato: le due bande si muovono insieme
+ * perche' sono la stessa scatola.
+ */
+.shell-bar {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: var(--surface);
+  /* I 28px di stacco dal contenuto erano il `margin-bottom` della testata:
+   * dentro l'involucro avrebbero aperto un buco FRA le due bande, quindi
+   * passano all'involucro e la testata li cede. */
+  margin-bottom: 28px;
+}
+.shell-bar .shell-topbar {
+  position: static;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--ares-line);
+}
+.shell-bar .shell-topnav { position: static; }
+
+
+/* -------------------------------------------------------------------
+ * IL MARCHIO, TORNATO IN TESTATA
+ * -------------------------------------------------------------------
+ * LA PIASTRA CHIARA NON E' DECORAZIONE: e' la misura che rende il logo
+ * leggibile. L'inchiostro e' `RGB(17,51,91)`; sul fondo scuro della
+ * testata il proprietario ha misurato 1.30:1, su `--c-n-084-fill`
+ * (#cbd5e1) 8.58:1. Il token e' uno di quelli che valgono lo STESSO nei
+ * due temi per costruzione — la classe `fill` — quindi la piastra non
+ * cambia col tema e il contrasto misurato vale in entrambi.
+ */
+.shell-brandbar {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border-radius: var(--ares-radius-sm);
+  background: var(--c-n-084-fill);
+}
+
+.shell-brand {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  text-decoration: none;
+}
+
+/* Sfondo CSS e non `<img>`: quattro prove di altri moduli chiedono
+ * `assertNotIn("<img", html)` sulla pagina INTERA, e la shell sta in ognuna.
+ *
+ * IL RAPPORTO E' DICHIARATO, non ottenuto da una coppia di numeri. La prima
+ * stesura scriveva `104px x 29px`, che vale 3.586 contro i 3.602 del file:
+ * il logo si deformava di poco, cioe' abbastanza da non vedersi e da restare
+ * cosi' per sempre. `aspect-ratio: 771 / 214` sono le dimensioni VERE del
+ * PNG — c'e' una prova che le rilegge dal file, cosi' sostituire il logo con
+ * un taglio diverso e lasciare il foglio com'e' diventa rosso.
+ * `background-size: contain` e non `cover`: `cover` taglierebbe il marchio
+ * ai lati senza avvisare. */
+.shell-brand-logo {
+  display: block;
+  height: 29px;
+  aspect-ratio: 771 / 214;
+  background-image: url("brand/ares-logo.png");
+  background-position: left center;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+/* -------------------------------------------------------------------
+ * IL COMANDO DEL MENU COMPATTO
+ * ------------------------------------------------------------------- */
+/* SOLO PER I LETTORI DI SCHERMO — e la sua assenza si e' VISTA.
+ *
+ * `.shell-sr` viveva nel blocco della colonna, ed e' uscita con lui: il
+ * comando del menu compatto continuava a portarne la classe, quindi a 390px
+ * le parole «Apri il menu di navigazione» si disegnavano SOPRA il marchio.
+ * Non e' una violazione di accessibilita' — un'etichetta visibile e' piu'
+ * accessibile, non meno — quindi axe taceva; e il cancello del guscio
+ * guardava l'apertura del pannello, non l'aspetto del bottone. L'ha trovata
+ * uno SCATTO, per la seconda volta in questa lane.
+ * E' la stessa famiglia del token indefinito: una classe che non esiste piu'
+ * non fallisce, semplicemente non fa niente — e qui il «niente» era testo in
+ * faccia all'utente.
+ * `clip-path` accanto a `clip`: il secondo e' deprecato ma serve ai motori
+ * vecchi, e tenerli entrambi non costa nulla. */
+.shell-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* IL BERSAGLIO E' 32x32 E I DUE NUMERI SONO DICHIARATI ENTRAMBI.
+ * `dashboard.css:317` dichiara `button { width: 100%; padding: 15px 18px;
+ * font-weight: 900 }` su OGNI bottone del prodotto. Chi batte `width` e tace
+ * su `padding` non ottiene la propria misura: con `box-sizing: border-box`
+ * la larghezza usata diventa 18+18+2 e l'altezza 15+15+2 — misurato in
+ * Chromium sul controllo precedente, 38x32 contro i 30x30 scritti nel
+ * foglio. `font-weight: 600` per la stessa ragione: 900 su un glifo di 13px
+ * produce una macchia, non un'icona.
+ * `inline-flex` con i due allineamenti: non e' il caso a centrare il glifo,
+ * e va dichiarato. Il `display` e' `none` finche' la riga dei gruppi c'e'
+ * (vedi il punto di rottura a 860px), ma la GEOMETRIA e' la stessa alle due
+ * larghezze — un bersaglio che cambia misura comparendo si legge come un
+ * salto. */
+.shell-menu-toggle {
+  display: none;              /* compare sotto gli 860px */
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--ares-radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+/* TRE STATI, non uno. Il predecessore di questo controllo aveva il solo
+ * `:hover`: non rispondeva ne' alla tastiera ne' alla pressione, e un
+ * bersaglio che non reagisce al dito si preme due volte.
+ * L'anello di fuoco e' RIDICHIARATO e non ereditato: `tokens.css` lo da'
+ * dentro un `:where(a, button, ...)`, che ha specificita' ZERO — qualunque
+ * regola di questa classe lo spegnerebbe senza che nessuno se ne accorga. */
+.shell-menu-toggle:hover {
+  background: var(--c-n-064-a10-bg);
+}
+.shell-menu-toggle:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+/* Nessun `transform`: uno `scale()` su un bersaglio da 34px lo porterebbe
+ * sotto la soglia di 24px proprio mentre il dito e' gia' sopra. */
+.shell-menu-toggle:active {
+  background: var(--c-n-064-a14-bg);
+}
+
+/* -------------------------------------------------------------------
+ * LA DATA — TESTO, non un controllo
+ * -------------------------------------------------------------------
+ * Niente bordo, niente sfondo, niente stato premuto: non si preme e non
+ * filtra niente. Il filtro dell'intervallo e' un controllo vero e non
+ * esiste ancora (Fase 3): disegnarne uno adesso sarebbe un comando che
+ * non muove alcun dato.
+ */
+.shell-data {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--c-n-072);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.shell-data-eti {
+  color: var(--c-n-072);
+  font-size: 11px;                 /* il pavimento, non sotto */
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* -------------------------------------------------------------------
+ * LA BANDA DEI SEI GRUPPI
+ * ------------------------------------------------------------------- */
+.shell-topnav {
+  padding: 0 20px;
+  border-bottom: 1px solid var(--ares-line);
+}
+.shell-topnav-lista {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.shell-topnav-el { position: relative; }
+
+.shell-topnav-voce {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: auto;                     /* contro `button { width: 100% }` */
+  height: 38px;
+  padding: 0 12px;                 /* contro `button { padding: 15px 18px }` */
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--c-n-072);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;                /* non 900: l'enfasi di massa e' rumore */
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.shell-topnav-voce:hover {
+  background: var(--c-n-064-a10-bg);
+  color: var(--text);
+}
+
+/* LA VOCE CORRENTE E' MARCATA DUE VOLTE — colore E forma. Il solo
+ * colore esclude chi non lo distingue e sparisce in stampa. */
+.shell-topnav-voce.active,
+.shell-topnav-voce[data-corrente="si"] {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+.shell-topnav-voce[aria-expanded="true"] {
+  background: var(--c-n-064-a10-bg);
+  color: var(--text);
+}
+.shell-topnav-icona { width: 16px; height: 16px; }
+.shell-topnav-tacca { width: 12px; height: 12px; opacity: 0.72; }
+
+/* -------------------------------------------------------------------
+ * I PANNELLI
+ * ------------------------------------------------------------------- */
+.shell-sub {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 70;
+  min-width: 232px;
+  margin-top: 1px;
+  padding: 6px;
+  border: 1px solid var(--ares-line);
+  border-radius: var(--ares-radius-md);
+  background: var(--surface);
+  box-shadow: var(--ares-shadow-strong);
+}
+.shell-sub-lista { margin: 0; padding: 0; list-style: none; }
+
+.shell-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;                /* >= 24px del criterio 2.5.8 */
+  padding: 7px 10px;
+  border-radius: var(--ares-radius-sm);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+}
+.shell-nav-link:hover { background: var(--c-n-064-a10-bg); }
+
+/* Anche qui due marche: fondo E tacca a sinistra. */
+.shell-nav-link.active {
+  background: var(--c-n-064-a14-bg);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 0 var(--accent);
+}
+.shell-nav-icon { width: 17px; height: 17px; flex: 0 0 auto; }
+.shell-nav-label { min-width: 0; }
+
+/* -------------------------------------------------------------------
+ * IL MENU COMPATTO
+ * ------------------------------------------------------------------- */
+.shell-menu-compatto {
+  /* Dentro l'involucro appiccicato: non gli serve una posizione propria ne'
+   * un'altezza calcolata su una costante che non esiste piu'. `70vh` lascia
+   * sempre vedere che sotto c'e' la pagina. */
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 10px 14px 16px;
+  border-bottom: 1px solid var(--ares-line);
+  background: var(--surface);
+}
+.shell-compatto-lista,
+.shell-compatto-sub { margin: 0; padding: 0; list-style: none; }
+.shell-compatto-eti {
+  margin: 14px 0 3px;
+  padding: 0 8px;
+  color: var(--c-n-072);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.shell-compatto-voce { min-height: 40px; font-size: 14px; }
+.shell-compatto-gruppo { font-weight: 600; }
+
+/* -------------------------------------------------------------------
+ * UN SOLO ANELLO DI FUOCO, e mai `outline: none` senza sostituto
+ * ------------------------------------------------------------------- */
+.shell-topnav-voce:focus-visible,
+.shell-nav-link:focus-visible,
+.shell-brand:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--ares-radius-sm);
+}
+
+/* -------------------------------------------------------------------
+ * TRE PUNTI DI ROTTURA: 1120 / 860 / 560
+ * ------------------------------------------------------------------- */
+.shell-data-breve { display: none; }
+
+@media (max-width: 1120px) {
+  /* LA DATA NON CEDE PIU', cambia forma. La prima stesura la nascondeva
+   * («e' informazione, non navigazione»): sbagliato, perche' ogni numero
+   * della home e' tagliato su «oggi» e su un telefono sapere quale oggi
+   * conta piu' che altrove. Le due forme le produce il server; qui si
+   * sceglie quale mostrare. */
+  .shell-data-lunga { display: none; }
+  .shell-data-breve { display: inline; }
+  .shell-data-eti { display: none; }
+}
+
+/* Sotto gli 860 la riga dei sei gruppi non ci sta. NON si comprime: si
+ * SOSTITUISCE con il menu compatto. Comprimerla produrrebbe uno
+ * scorrimento orizzontale silenzioso, che e' peggio di un menu diverso. */
+@media (max-width: 860px) {
+  .shell-topnav { display: none; }
+  .shell-menu-toggle { display: inline-flex; }
+  .shell-topbar { padding-left: 12px; padding-right: 12px; }
+}
+
+@media (max-width: 560px) {
+  /* La briciola sparisce: il nome della pagina e' gia' nel titolo del
+   * contenuto, e in 360px la riga serve al marchio e all'account. */
+  .shell-crumb { display: none; }
+  .shell-brand-logo { width: 88px; height: 24px; }
+  .shell-topbar { gap: 8px; }
+}
+
+/* ===================================================================
+ * FASE 3 — I GRAFICI DELLA HOME, IL FILTRO, LO STATO «NEGATO»
+ * ===================================================================
+ * Valgono le stesse tre regole della Fase 2: nessun `var(--token,
+ * ripiego)`, nessun selettore di elemento nudo, e ogni controllo dichiara
+ * `width` E `padding` perche' `dashboard.css:317` li impone a ogni bottone
+ * del prodotto.
+ * =================================================================== */
+
+/* -------------------------------------------------------------------
+ * LA SCHEDA NEGATA
+ * -------------------------------------------------------------------
+ * Non e' un guasto e non deve sembrarlo: niente rosso, niente bordo
+ * d'allarme. E' una porta chiusa, e si legge come tale — tratteggio e
+ * inchiostro attenuato. Il colore NON e' l'unico indicatore: la scheda
+ * porta scritto «Accesso negato» e il nome del permesso.
+ */
+.metric-denied {
+  border-style: dashed;
+  cursor: default;
+}
+
+.metric-flag-denied {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: var(--ares-radius-sm);
+  background: var(--c-n-064-a10-bg);
+  color: var(--c-n-072);
+  font-size: 11px;              /* il pavimento tipografico, non sotto */
+  font-weight: 600;
+}
+
+/* -------------------------------------------------------------------
+ * IL FILTRO DEL PERIODO
+ * -------------------------------------------------------------------
+ * E' un CONTROLLO: bordo, sfondo, stato premuto, anello di fuoco. La data
+ * corrente, che vive nella barra superiore, e' TESTO e non ha nulla di
+ * tutto questo. Un utente non deve poterli scambiare, ed e' la ragione per
+ * cui non condividono la forma.
+ */
+.home-periodo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+.home-periodo-eti {
+  color: var(--c-n-072);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.home-periodo-scelte {
+  display: inline-flex;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--ares-radius-sm);
+}
+.home-periodo-btn {
+  width: auto;                  /* contro `button { width: 100% }` */
+  min-height: 26px;
+  padding: 0 10px;              /* contro `button { padding: 15px 18px }` */
+  border: 0;
+  border-radius: var(--ares-radius-sm);
+  background: transparent;
+  color: var(--c-n-072);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;             /* non 900: l'enfasi di massa e' rumore */
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.home-periodo-btn:hover {
+  background: var(--c-n-064-a10-bg);
+  color: var(--text);
+}
+/* Lo stato scelto e' marcato DUE volte — fondo E inchiostro E `aria-pressed`
+ * — perche' il solo colore esclude chi non lo distingue. */
+.home-periodo-btn.attivo {
+  background: var(--c-n-064-a14-bg);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: inset 0 -2px 0 0 var(--accent);
+}
+.home-periodo-btn:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* -------------------------------------------------------------------
+ * I PANNELLI DEI GRAFICI
+ * ------------------------------------------------------------------- */
+.home-grafici { margin-top: 22px; }
+
+.grafici-griglia {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;          /* niente pannelli stirati: lo spazio vuoto
+                                  enorme e' uno dei divieti */
+  gap: 14px;
+  margin-top: 14px;
+}
+/* RAGGIO AMPIO SOLO QUI, e la distinzione va scritta perche' sembra una
+ * contraddizione. `ARES-DESIGN.md` §3 vieta le «card molto arrotondate», e la
+ * ragione che dava e' precisa: «a raggi larghi una riga densa diventa una
+ * pastiglia, e un elenco di pastiglie non si legge come un elenco». Vale per
+ * le righe e per le schede fitte — e infatti le schede KPI restano a 5px.
+ * Un pannello di grafico non e' una riga: e' una superficie larga che
+ * contiene una tela. Li' un raggio ampio separa il piano invece di
+ * impastarlo, ed e' quello che il proprietario ha chiesto guardando il
+ * riferimento. Il divieto resta dov'era. */
+.grafico-panel {
+  padding: 18px 18px 16px;
+  border-radius: 20px;
+  background: var(--ares-surface);
+  box-shadow: var(--ares-shadow-soft);
+}
+.grafico-testa {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--ares-line);
+  flex-wrap: wrap;
+}
+.grafico-testa-nome { min-width: 0; }
+
+/* IL RIEPILOGO IN TESTA. Il totale c'e' sempre che ci siano punti; la
+ * variazione solo se la sorgente ha dato la finestra precedente — il
+ * template non la stampa affatto quando manca, e questo blocco non ha nulla
+ * da nascondere. */
+.grafico-riepilogo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+.grafico-totale {
+  color: var(--ares-text);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+.grafico-variazione {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+/* IL VERDE QUI E' LEGITTIMO: «in crescita» E' uno stato positivo, ed e'
+ * esattamente il significato che il sistema riserva a quel colore. Nel
+ * grafico per canale non lo era, e infatti li' e' uscito. */
+.grafico-variazione.in-crescita { color: var(--ares-green); }
+.grafico-variazione.in-calo { color: var(--ares-orange); }
+.grafico-variazione-m {
+  color: var(--c-n-072);
+  font-weight: 400;
+}
+.grafico-titolo {
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+.grafico-meta {
+  color: var(--c-n-072);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* L'altezza e' DICHIARATA: un `<canvas>` senza altezza dentro un contenitore
+ * responsivo entra nel ciclo in cui Chart.js lo ridimensiona e il layout
+ * ricalcola, e la tela cresce a ogni giro. */
+.grafico-tela {
+  position: relative;
+  width: 100%;
+  height: 210px;
+}
+.grafico-canvas { display: block; width: 100%; height: 100%; }
+.grafico-tela-ciambella { height: 190px; }
+
+/* LE QUOTE SCRITTE. Una ciambella senza numeri chiede di stimare un angolo a
+ * occhio: qui accanto ci sono l'assoluto e la percentuale, calcolata dai
+ * valori veri. I pallini riprendono l'ordine della palette del grafico —
+ * blu, azzurro, ambra — e non sono l'unico indicatore: il nome del canale e'
+ * scritto accanto. */
+.grafico-quote {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.grafico-quote > li {
+  display: grid;
+  grid-template-columns: 10px 1fr auto auto;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--ares-line);
+  font-size: 12px;
+}
+.grafico-quote > li:last-child { border-bottom: 0; }
+.quota-pallino {
+  width: 8px; height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+/* L'ORDINE SEGUE LA PALETTE DEL GRAFICO — blu, ambra, azzurro — e se uno dei
+ * due cambia senza l'altro il pallino smette di indicare la propria fetta,
+ * che e' peggio di non averlo. Il pallino non e' comunque l'unico
+ * indicatore: il nome del canale e' scritto accanto. */
+.quota-pallino[data-indice="1"] { background: var(--ares-orange); }
+.quota-pallino[data-indice="2"] { background: var(--c-b-060); }
+.quota-nome { color: var(--ares-text); min-width: 0; }
+.quota-val { color: var(--c-n-072); font-variant-numeric: tabular-nums; }
+.quota-perc {
+  color: var(--ares-text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  min-width: 3.4em;
+  text-align: right;
+}
+
+/* IL COMANDO DEI DATI. `<details>` chiuso: trenta righe sotto ogni tela
+ * spingevano il resto della pagina sotto due schermate, e i dati non si
+ * potevano togliere perche' sono il grafico scritto. */
+.grafico-dati { margin-top: 12px; }
+.grafico-dati-comando {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--ares-radius-sm);
+  color: var(--ares-text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+.grafico-dati-comando::-webkit-details-marker { display: none; }
+.grafico-dati-comando::after {
+  content: "";
+  width: 7px; height: 7px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg) translate(-2px, -2px);
+}
+.grafico-dati[open] .grafico-dati-comando::after {
+  transform: rotate(-135deg) translate(-2px, -2px);
+}
+.grafico-dati-comando:hover { background: var(--c-n-064-a10-bg); }
+.grafico-dati-comando:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.grafico-dati-conta { color: var(--c-n-072); font-weight: 400; }
+
+/* LA TABELLA E' IL GRAFICO SCRITTO, e non e' un ripiego per lettori di
+ * schermo: sono gli stessi valori, disponibili a chiunque. Scorre nel
+ * proprio contenitore quando serve — mai la pagina. */
+/* L'INVOLUCRO SCORRE, LA TABELLA NO — e la prima stesura faceva il
+ * contrario. Una `<table>` con `display: block; overflow: auto` scorre, ma
+ * non contiene le proprie righe: a 390px il pannello si allargava a 736 e la
+ * PAGINA scorreva in orizzontale di 347px. E axe aggiungeva il secondo
+ * difetto: `scrollable-region-focusable`, cioe' una regione che scorre e che
+ * la tastiera non puo' raggiungere.
+ * `tabindex="0"` sul contenitore chiude il secondo; `overflow-x: auto` su un
+ * involucro vero chiude il primo. Il ritaglio e' DICHIARATO, quindi il
+ * cancello dello scorrimento lo salta di proposito — e' l'unico scorrimento
+ * orizzontale ammesso, ed e' dentro una scatola, mai sulla pagina. */
+.grafico-tabella-wrap {
+  max-height: 168px;
+  margin-top: 12px;
+  overflow: auto;
+  border-radius: var(--ares-radius-sm);
+}
+.grafico-tabella-wrap:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.grafico-tabella {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.grafico-tabella caption {
+  color: var(--c-n-072);
+  font-size: 11px;
+  text-align: left;
+  padding-bottom: 6px;
+}
+.grafico-tabella th,
+.grafico-tabella td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--ares-line);
+  color: var(--text);
+  text-align: left;
+  white-space: nowrap;
+}
+.grafico-tabella thead th {
+  color: var(--c-n-072);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.grafico-tabella .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* -------------------------------------------------------------------
+ * I TRE STATI SENZA GRAFICO, e sono TRE e non uno
+ * -------------------------------------------------------------------
+ *   negato        non ne hai diritto      (non ho chiesto)
+ *   vuoto         ha risposto: niente     (ho chiesto, zero righe)
+ *   NON_MISURATO  la sorgente non esiste  (non c'e' nulla da chiedere)
+ * Disegnarli uguali avrebbe fatto cercare un guasto a chi deve chiedere un
+ * permesso, e viceversa.
+ */
+/* SPECIFICITA' `.grafico-panel .grafico-stato`, E IL TOKEN E' `--ares-muted`.
+ *
+ * Due difetti in una riga sola, e li ha trovati la misura del contrasto in
+ * tema chiaro — non il calcolo a tavolino, che diceva 7,79:1 e prometteva
+ * bene.
+ *
+ * 1. `dashboard.css:146` dichiara `.panel p { color: var(--muted) }`, che ha
+ *    specificita' (0,1,1) e batte un `.grafico-stato` da (0,1,0). Questi due
+ *    elementi sono `<p>` dentro un `.panel`: la mia dichiarazione non
+ *    arrivava mai.
+ * 2. E `--muted` NON ESISTE nella cascata che questa pagina carica — vive in
+ *    `src/static/tokens.css`, che `app_base.html` non collega. Un `var()` su
+ *    un nome indefinito rende la dichiarazione invalida, e per una proprieta'
+ *    EREDITATA «invalida» significa EREDITA: il colore lo decideva il
+ *    genitore, e in tema chiaro atterrava su `#9fb0c8` — il valore SCURO —
+ *    cioe' 2,21:1 su bianco.
+ *
+ * E' la terza volta che `var(--muted)` indefinito produce un difetto in
+ * questa lane. Qui si chiude per i miei nodi; la riga di `dashboard.css`
+ * resta com'e' — tocca ogni `<p>` dentro ogni pannello del prodotto, e
+ * cambiarla e' un perimetro che questa correzione non ha. E' riportata.
+ */
+.grafico-panel .grafico-stato {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 18px 14px;
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--ares-radius-sm);
+  color: var(--ares-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.stato-eti {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border-radius: var(--ares-radius-sm);
+  background: var(--c-n-064-a14-bg);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+/* Stessa coppia di ragioni della `.grafico-stato` qui sopra: `<p>` dentro un
+ * `.panel`, quindi serve la specificita'; e un token definito in ENTRAMBI i
+ * temi, non uno che esiste in un foglio che questa pagina non carica. */
+.grafico-panel .grafico-fonte {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--ares-line);
+  color: var(--ares-muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.grafico-panel .grafico-fonte code { font-size: 11px; color: inherit; }
+
+/* -------------------------------------------------------------------
+ * LE DUE FASCE DEI NUMERI — FLEX, e non una griglia a colonne
+ * -------------------------------------------------------------------
+ * `repeat(auto-fit, minmax(230px, 1fr))` sembrava la scelta giusta e NON LO
+ * ERA: a 1440px calcola CINQUE colonne, e tre schede ne lasciano due vuote in
+ * fondo. Misurato dal cancello — «3 schede su 5 colonne» — cioe' esattamente
+ * la riga spaiata che questa correzione doveva togliere, riprodotta dal
+ * rimedio.
+ * `auto-fit` collassa le colonne vuote solo quando le tracce sono definite
+ * dal contenuto; con `1fr` restano larghe e vuote.
+ *
+ * Con `flex` la domanda non si pone: gli elementi si dividono la riga per
+ * intero, qualunque sia il loro numero — quattro, tre, o quanti ne lasciano
+ * i permessi. Non c'e' una griglia da «chiudere», perche' non c'e' una
+ * griglia.
+ */
+.metric-grid-primaria,
+.metric-grid-secondaria {
+  display: flex;
+  flex-wrap: wrap;
+}
+.metric-grid-primaria > * { flex: 1 1 210px; min-width: 0; }
+.metric-grid-secondaria > * { flex: 1 1 230px; min-width: 0; }
+
+@media (max-width: 1120px) {
+  .grafici-griglia { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* -------------------------------------------------------------------
+ * MOBILE — IL CONTENUTO NON PARTE DAL BORDO
+ * -------------------------------------------------------------------
+ * `dashboard.css` ha DUE blocchi `@media (max-width: 820px)` che dichiarano
+ * `.main { padding: 0 !important }`: sono resti della vecchia colonna (lo si
+ * legge dai selettori accanto, `.sidebar .nav`), e li' il workspace To-Do ci
+ * conta per andare a tutta larghezza. Non si toccano — appartengono a
+ * un'altra lane, e batterli con un terzo `!important` sarebbe la gara che
+ * questo foglio si e' imposto di non disputare.
+ *
+ * Il margine si mette quindi sui blocchi della HOME, che sono nostri. Copre
+ * cio' che il proprietario ha elencato: titolo, schede, filtro e grafici —
+ * il titolo perche' vive dentro `.panel-head` di queste sezioni.
+ */
+@media (max-width: 860px) {
+  .home-metrics,
+  .home-grafici {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  /* LA SECONDA FASCIA CHIUDE LA GRIGLIA. A due colonne, tre schede lasciano
+   * una scheda orfana su una riga tutta sua — che e' il contrario di
+   * «compatta». A una colonna la fascia chiude sempre, qualunque sia il
+   * numero di schede che i permessi lasciano passare, e le righe basse la
+   * rendono comunque piu' leggera della prima. */
+  /* Due schede per riga in prima fascia: quattro chiudono in due righe
+   * piene. La seconda a riga intera — con tre schede, due colonne ne
+   * lascerebbero una orfana, che e' il contrario di «compatta». */
+  .metric-grid-primaria > * { flex: 1 1 calc(50% - 5px); }
+  .metric-grid-secondaria > * { flex: 1 1 100%; }
+
+  .metric-card-compatta {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .metric-card-compatta .metric-label { min-height: 0; }
+}
+
+@media (max-width: 560px) {
+  /* A 360px due colonne di schede lasciano ~150px l'una: un importo come
+   * «€ 18.420,00» non ci sta senza spezzarsi, e un numero spezzato per un
+   * attimo si legge sbagliato. Una colonna sola. */
+  .metric-grid-primaria > * { flex: 1 1 100%; }
+  .grafico-panel { padding: 14px; border-radius: 16px; }
+  .grafico-quote > li { grid-template-columns: 10px 1fr auto; row-gap: 2px; }
+  .quota-perc { grid-column: 3; }
+  .quota-val { grid-column: 2 / 4; text-align: left; }
+}
+
+@media (max-width: 560px) {
+  /* L'etichetta del filtro cede, i bottoni no: sono il controllo. Il
+   * gruppo conserva il proprio nome accessibile via `aria-labelledby`,
+   * quindi nasconderla non lo toglie. */
+  .home-periodo-eti { display: none; }
+  .grafico-tela { height: 180px; }
+  .panel-head { flex-wrap: wrap; gap: 10px; }
+}
+
+/* ===================================================================
+ * FASE 4 — LE PAGINE DEI MODULI
+ * ===================================================================
+ * Migrazione progressiva, un modulo per commit. Qui vivono solo le classi
+ * CONDIVISE fra le pagine migrate: cio' che serve a un modulo solo resta
+ * nel foglio di quel modulo.
+ * Valgono le tre regole di sempre: nessun `var(--token, ripiego)`, nessun
+ * selettore di elemento nudo, ogni controllo dichiara `width` E `padding`.
+ * =================================================================== */
+
+/* IL SIMBOLO NEL TITOLO DI PAGINA, al posto dell'emoji.
+ * `currentColor` e `stroke` arrivano da `.ao-i`; qui si decide solo quanto
+ * e' grande e come sta accanto alle parole. `align-items: baseline` NO: un
+ * quadrato allineato alla linea di base di un titolo da 34px scende sotto
+ * la riga. `center` con una lieve correzione ottica. */
+.page-head h1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.page-head-icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+/* IL SEGNAPOSTO DELLA FOTO MANCANTE.
+ * `i-vuoto` e' il simbolo disegnato per questo caso. Il contenitore porta
+ * `aria-hidden`: l'informazione «foto assente» e' gia' nel testo accanto,
+ * e un lettore di schermo che annunciasse anche l'icona direbbe la stessa
+ * cosa due volte. */
+.thumb-vuota {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--c-n-072);
+}
+.thumb-vuota .ao-i { width: 22px; height: 22px; }
+
+@media (max-width: 560px) {
+  .page-head h1 { gap: 9px; }
+  .page-head-icon { width: 22px; height: 22px; }
+}

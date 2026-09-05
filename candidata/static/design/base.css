@@ -1,0 +1,135 @@
+/* FONDAMENTA — le poche regole che valgono prima di ogni foglio.
+ *
+ * IL CARATTERE, E PERCHE' NON SI CHIAMA `Inter`
+ * ---------------------------------------------
+ * Fino a oggi il prodotto dichiarava `Inter` in due punti — `dashboard.css`
+ * e `design/auth.css` — e non lo consegnava da nessuna parte: zero
+ * `@font-face`, zero `.woff2`, zero collegamenti esterni. Misurato in
+ * Chromium, la larghezza di «Riordino merci ARES 1234567890» a 16 px era
+ * IDENTICA AL MILLESIMO con `Inter, Arial` e con `Arial`: il prodotto era
+ * disegnato in Arial e lo diceva a nessuno.
+ *
+ * E le due dichiarazioni DIVERGEVANO — `Inter, Arial` contro
+ * `Inter, "Segoe UI", Arial` — quindi su Windows l'accesso cadeva su Segoe
+ * UI e l'applicazione su Arial: due caratteri nello stesso prodotto, per una
+ * differenza che nessuno aveva deciso.
+ *
+ * La scelta del proprietario e' la PILA DI SISTEMA, dichiarata onestamente e
+ * senza rete. Un carattere che non si scarica non puo' arrivare a meta', non
+ * ha un lampeggio di testo non stilato, non aggiunge un dominio da cui
+ * dipendere, e su ogni sistema e' quello che l'utente gia' legge tutto il
+ * giorno.
+ *
+ * `system-ui` per primo perche' e' l'unico nome che il sistema risolve DA
+ * SOLO; i successivi sono i nomi reali delle stesse famiglie sui sistemi
+ * dove `system-ui` non basta. Nessuno di questi e' una promessa che dobbiamo
+ * mantenere noi: e' il contrario di `Inter`.
+ *
+ * REGOLA CHE NE DISCENDE, e che una prova fa rispettare
+ * (`tests/test_carattere_dichiarato_e_consegnato.py`): un nome di carattere
+ * non generico e non fornito dal sistema puo' essere dichiarato SOLO se il
+ * repository lo consegna con un `@font-face`. Dichiarare e non consegnare e'
+ * la stessa famiglia del ripiego dietro un token che nessuno definira' mai:
+ * verde in ogni controllo statico, sbagliato in ogni browser.
+ */
+
+:root {
+  /* Consumato da `dashboard.css` e da `design/auth.css`: il carattere si
+   * dichiara UNA volta, o le due dichiarazioni tornano a divergere. */
+  --ares-font-sans:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    "Noto Sans", "Liberation Sans", Arial, sans-serif;
+
+  /* Le cifre delle tabelle e dei conteggi. Stessa pila, ma con le
+   * larghezze fisse: una colonna di numeri che balla da una riga all'altra
+   * non si legge, si conta. */
+  --ares-font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100%;
+}
+
+img,
+svg {
+  max-width: 100%;
+}
+
+/* IL «SALTA AL CONTENUTO» — DUE POLI, NON UNO.
+ *
+ * Un collegamento di salto ha due stati, ed entrambi sono parte del
+ * contratto: invisibile finche' nessuno lo cerca, e VISIBILE quando riceve
+ * il fuoco. Un collegamento che resta nascosto anche col fuoco addosso e' il
+ * difetto piu' comune di questo componente: esiste nel DOM, passa ogni
+ * controllo che conti i nodi, e non si vede mai — la stessa faccia del
+ * ripiego dietro un token che nessuno definira' mai.
+ *
+ * Per questo il cancello (`SKIPLINK_*` in `tests/acceptance_axe_sitewide.py`)
+ * misura tutti e due i poli sulla stessa pagina: fuori dalla finestra senza
+ * fuoco, dentro la finestra e IN CIMA AL PROPRIO CENTRO con il fuoco. Il
+ * secondo polo e' quello che non si puo' soddisfare per sbaglio.
+ *
+ * NON `display: none` e NON `visibility: hidden`: toglierebbero l'elemento
+ * dall'ordine di tabulazione, cioe' proprio dalla sequenza in cui deve
+ * comparire per primo. Si sposta FUORI dalla finestra e rientra col fuoco.
+ *
+ * `padding` e' dichiarato per scelta: `dashboard.css` porta regole di
+ * elemento che in questo prodotto hanno gia' fatto disegnare 38x32 a un
+ * controllo che si dichiarava 30x30. Un componente nuovo che dichiara solo
+ * la larghezza eredita il resto senza accorgersene.
+ *
+ * `min-height: 24px` non e' decorazione: e' un bersaglio, e WCAG 2.5.8
+ * chiede 24 CSS px per lato. Con `box-sizing: border-box` — dichiarato in
+ * cima a questo foglio — il bordo sta dentro.
+ *
+ * NESSUN `var(--token, ripiego)`. `--accent`, `--accent-contrast` e
+ * `--focus-ring` sono definiti in `design/tokens.css` per ENTRAMBI i temi: un
+ * ripiego qui sarebbe o inutile o, se il nome fosse sbagliato, permanente e
+ * invisibile. E il primo piano e' DICHIARATO accanto al fondo: ereditarlo
+ * significa che il contrasto dipende da quale tema e' attivo, cioe' che non
+ * e' stato deciso. */
+.ares-salta-al-contenuto {
+  position: fixed;
+  top: -100px;
+  left: 12px;
+  z-index: 1000;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 8px 16px;
+  border: 1px solid var(--accent-contrast);
+  border-radius: 5px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ares-salta-al-contenuto:focus,
+.ares-salta-al-contenuto:focus-visible {
+  top: 12px;
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Il bersaglio del salto porta `tabindex="-1"` per ricevere il fuoco: senza,
+ * il fuoco arriva alla pagina ma non all'elemento, e il lettore di schermo
+ * continua a leggere da dov'era. Il `tabindex` negativo non lo mette
+ * nell'ordine di tabulazione, quindi non aggiunge una fermata; ma lo rende
+ * focalizzabile, e allora l'anello globale gli si disegnerebbe intorno a
+ * ogni salto. Un rettangolo grande quanto la pagina non e' un'indicazione di
+ * fuoco, e' un lampo. `:focus-visible` continua a valere per i controlli
+ * veri, che sono quelli per cui l'anello esiste. */
+.main[tabindex="-1"]:focus { outline: none; }

@@ -1,0 +1,116 @@
+/* FOGLIO DELL'ANTEPRIMA — solo cio' che l'anteprima aggiunge.
+ *
+ * Non ridefinisce nulla del disegno in approvazione: se lo facesse, chi
+ * guarda approverebbe qualcosa che il prodotto non e'. Tocca soltanto la
+ * barra, il distintivo, i collegamenti disattivati e i moduli inerti.
+ *
+ * I COLORI SONO PROPRI, NON TOKEN DEL TEMA. Consumare `var(--surface)`
+ * qui legherebbe l'avviso «questa e' una demo» alla riuscita del tema:
+ * se il tema non si applicasse, l'avviso sparirebbe proprio nel caso in
+ * cui serve di piu'. Sono valori letterali, e restano leggibili in
+ * entrambi i temi.
+ */
+
+.anteprima-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 18px;
+  padding: 10px 18px;
+  background: #7a1f1f;
+  color: #ffffff;
+  font: 500 13px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  border-bottom: 3px solid #f3c623;
+  /* NEL FLUSSO, non `position: fixed`. Una barra fissa si sovrapporrebbe
+     alla testata appiccicata della shell, e la sovrapposizione e' un
+     difetto gia' pagato in questo programma. Qui la barra spinge la
+     pagina in basso e non copre nulla. */
+  position: relative;
+  z-index: 1;
+}
+.anteprima-barra strong { color: #ffffff; }
+.anteprima-barra > strong:first-child { letter-spacing: .04em; }
+.anteprima-barra code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  background: rgba(255, 255, 255, .16);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.anteprima-prov { opacity: .92; }
+.anteprima-legenda { font-size: 12px; opacity: .95; }
+.anteprima-chiave { padding: 0 3px; }
+.anteprima-chiave-scrittura {
+  outline: 1px dashed #f3c623;
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+.anteprima-chiave-morto {
+  text-decoration: underline dashed #f3c623;
+  text-underline-offset: 2px;
+  opacity: .6;
+}
+.anteprima-casa {
+  margin-left: auto;
+  color: #ffffff;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
+/* IL DISTINTIVO PERSISTE DOVE LA BARRA SCORRE VIA.
+ * `pointer-events: none` perche' un avviso non deve mai rubare un clic
+ * all'interfaccia che si sta valutando. */
+.anteprima-distintivo {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2147483000;
+  pointer-events: none;
+  background: #7a1f1f;
+  color: #ffffff;
+  border: 2px solid #f3c623;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font: 700 11px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: .06em;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .35);
+}
+
+/* COLLEGAMENTI DISATTIVATI — visibili come tali, non solo inerti.
+ * L'`href` e' gia' stato TOLTO in costruzione: questo e' l'aspetto, non
+ * il meccanismo. Se questo foglio non arrivasse, il collegamento
+ * resterebbe comunque non navigabile. */
+[data-anteprima-morto] {
+  opacity: .55;
+  cursor: not-allowed;
+  /* Sottolineatura tratteggiata e NON `line-through`.
+     Il guscio ARES porta 27 voci di navigazione per pagina, tutte fuori
+     dal perimetro di questa anteprima: barrarle tutte renderebbe
+     illeggibile proprio l'interfaccia che si deve valutare. Il segno
+     deve essere visibile, non distruttivo. */
+  text-decoration: underline dashed rgba(160, 60, 60, .8);
+  text-underline-offset: 2px;
+}
+/* NESSUN GLIFO AGGIUNTO.
+   La prima stesura appendeva U+20E0 (cerchio barrato). Misurato con uno
+   scatto Chromium: il carattere NON esiste nei font di questo ambiente e
+   si disegna come un rettangolo vuoto -- cioe' come un carattere ROTTO,
+   che e' peggio di nessun segno: sembra un difetto dell'interfaccia in
+   valutazione invece di un'annotazione dell'anteprima. Il segno resta la
+   sottolineatura tratteggiata piu' l'opacita', che nessun font puo'
+   mancare. */
+
+/* MODULI INERTI */
+/* `outline` e NON `border`: un bordo occupa spazio e sposta il disegno
+   che si sta valutando; il contorno si dipinge sopra e non ridispone
+   nulla. Il segno deve raccontare l'anteprima, non riscriverla. */
+.anteprima-inerte {
+  outline: 1px dashed rgba(198, 74, 74, .85);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.anteprima-inerte button,
+.anteprima-inerte input[type="submit"] { cursor: not-allowed; }
+
+@media print { .anteprima-distintivo { display: none; } }

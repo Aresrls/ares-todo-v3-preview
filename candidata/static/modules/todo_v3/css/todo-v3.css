@@ -1,0 +1,852 @@
+/* ARES To-Do V3 — la geometria del modulo.
+ *
+ * QUESTO FOGLIO E' LO STESSO CHE I WIREFRAME MISURANO.
+ * Non una copia, non un discendente: il file. `docs/todo-v3/wireframe/`
+ * lo carica insieme a un secondo foglio che disegna soltanto un guscio
+ * finto, e il cancello `scripts/accept_wireframe_todo_v3.sh` misura
+ * quelle pagine — scorrimento orizzontale, contrasto, tema ai due poli —
+ * cioe' misura QUESTE regole. Un wireframe con una propria copia del
+ * foglio sarebbe verde per sempre e non direbbe niente sul prodotto:
+ * divergerebbe alla prima correzione fatta su uno solo dei due.
+ *
+ * NON DICHIARA UN SOLO COLORE LETTERALE, e non usa `var(--x, ripiego)`.
+ * I nomi consumati sono i token SEMANTICI veri di
+ * `src/static/design/tokens.css`. Un ripiego dietro un nome che nessuno
+ * definira' mai e' verde oggi e resta verde per sempre; e i moduli che
+ * dichiaravano i propri token con valori scuri LETTERALI sono la causa
+ * misurata del difetto per cui il guscio si schiariva e il contenuto
+ * restava scuro.
+ *
+ * `button` HA UNA REGOLA GLOBALE IN `dashboard.css` che ha gia' prodotto
+ * tre difetti: `width: 100%` azzero' la finestra del nastro News, e
+ * `padding: 15px 18px` fece disegnare 38x32 a un bottone che dichiarava
+ * 30x30. Ogni comando qui dichiara **larghezza e padding**, non solo la
+ * larghezza.
+ */
+
+/* Il reset e' RISTRETTO al sottoalbero del modulo: un `*` globale da un
+ * foglio di modulo cambierebbe il calcolo delle dimensioni di tutta
+ * l'applicazione, comprese le pagine che non c'entrano. */
+.todo-v3,
+.todo-v3 *,
+.todo-v3 *::before,
+.todo-v3 *::after,
+.todo-v3-drawer,
+.todo-v3-drawer *,
+.todo-v3-velo,
+.todo-v3-rapido,
+.todo-v3-rapido *,
+.todo-v3-annulla,
+.todo-v3-annulla * { box-sizing: border-box; }
+
+/* ------------------------------------------------------------------ */
+/* IL MODULO TO-DO V3                                                  */
+/* Due colonne, non tre: navigazione compatta + lista. Il dettaglio e'  */
+/* un DRAWER che si apre sopra la lista, non una terza colonna sempre   */
+/* presente.                                                           */
+/* ------------------------------------------------------------------ */
+.todo-v3 {
+  --v3-raggio: 12px;
+  --v3-raggio-sm: 8px;
+  --v3-riga: 44px;
+  background: var(--sup-1);
+  color: var(--text);
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 232px minmax(0, 1fr);
+  position: relative;
+  isolation: isolate;
+}
+
+/* --- navigazione compatta ----------------------------------------- */
+.todo-v3-nav {
+  background: var(--sup-2);
+  border-right: 1px solid var(--border);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.todo-v3-nuova {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--v3-raggio-sm);
+  background: var(--accent);
+  color: var(--on-solid);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.todo-v3-cerca {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--v3-raggio-sm);
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+}
+.todo-v3-cerca::placeholder { color: var(--input-placeholder); }
+.todo-v3-gruppo > h2 {
+  margin: 0 0 6px;
+  padding: 0 6px;
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.todo-v3-viste { list-style: none; margin: 0; padding: 0; }
+.todo-v3-viste li { margin: 0; }
+.todo-v3-viste a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 4px 8px;
+  border-radius: var(--v3-raggio-sm);
+  color: var(--text-muted);
+  text-decoration: none;
+  min-width: 0;
+}
+.todo-v3-viste a:hover { background: var(--velo-3-basso); color: var(--text); }
+.todo-v3-viste a[aria-current="page"] {
+  background: var(--velo-3-alto);
+  color: var(--text);
+  font-weight: 600;
+}
+.todo-v3-viste .etichetta {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* IL CONTEGGIO E' SEMPRE SUL PERIMETRO VISIBILE DELL'UTENTE.
+ * Il numero qui e' finto, ma il posto no: e' l'unico punto in cui un
+ * totale globale potrebbe entrare senza che nulla diventi rosso. */
+.todo-v3-conta {
+  flex: 0 0 auto;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--velo-fondo-medio);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.todo-v3-pallino {
+  flex: 0 0 auto;
+  width: 9px; height: 9px;
+  border-radius: 999px;
+  background: currentColor;
+}
+.todo-v3-pallino.p1 { background: var(--danger); }
+.todo-v3-pallino.p2 { background: var(--warning); }
+.todo-v3-pallino.p3 { background: var(--accent-text); }
+.todo-v3-pallino.p4 { background: var(--text-muted); }
+
+/* --- colonna centrale --------------------------------------------- */
+.todo-v3-centro {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.todo-v3-testata {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--velo-1-basso);
+  min-width: 0;
+}
+.todo-v3-titolo { margin: 0; font-size: 20px; font-weight: 650; min-width: 0; }
+.todo-v3-spinta { flex: 1 1 auto; }
+.todo-v3-modi { display: flex; gap: 2px; padding: 2px; border: 1px solid var(--border); border-radius: var(--v3-raggio-sm); }
+.todo-v3-modi button {
+  width: auto;
+  padding: 5px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.todo-v3-modi button[aria-pressed="true"] {
+  background: var(--velo-3-alto);
+  color: var(--text);
+}
+.todo-v3-ordina {
+  padding: 6px 10px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--v3-raggio-sm);
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+/* --- lista --------------------------------------------------------- */
+.todo-v3-lista { list-style: none; margin: 0; padding: 8px 12px 96px; min-width: 0; }
+.todo-v3-sezione {
+  margin: 18px 0 6px;
+  padding: 0 8px;
+  font-size: 12px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.todo-v3-riga {
+  display: grid;
+  grid-template-columns: 22px 20px 22px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+.todo-v3-riga.is-aperta { background: var(--velo-3-basso); }
+.todo-v3-maniglia {
+  width: 22px; height: 22px;
+  border: 0; padding: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: grab;
+  line-height: 1;
+}
+.todo-v3-spunta {
+  width: 20px; height: 20px;
+  margin: 1px 0 0;
+  accent-color: var(--accent);
+}
+.todo-v3-completa {
+  width: 22px; height: 22px;
+  padding: 0;
+  border: 2px solid var(--border-strong);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+.todo-v3-completa.p1 { border-color: var(--danger); }
+.todo-v3-completa.p2 { border-color: var(--warning); }
+.todo-v3-corpo { min-width: 0; }
+.todo-v3-nome {
+  display: block;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.todo-v3-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+  min-width: 0;
+}
+.todo-v3-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.todo-v3-chip.scaduta { color: var(--danger-text); border-color: var(--danger); }
+.todo-v3-chip.pianificata { color: var(--accent-text); border-color: var(--border-strong); }
+.todo-v3-persona {
+  flex: 0 0 auto;
+  width: 26px; height: 26px;
+  border-radius: 999px;
+  background: var(--velo-3-alto);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* --- barra delle azioni di massa ----------------------------------- */
+.todo-v3-massa {
+  position: sticky;
+  bottom: 12px;
+  margin: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--v3-raggio);
+  background: var(--surface-elevated);
+  box-shadow: 0 10px 30px var(--ombra-media);
+  min-width: 0;
+}
+.todo-v3-massa button {
+  width: auto;
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--v3-raggio-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.todo-v3-massa .conteggio { font-weight: 700; }
+
+/* --- annullamento --------------------------------------------------- */
+.todo-v3-annulla {
+  position: fixed;
+  left: 16px; bottom: 16px;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--v3-raggio);
+  background: var(--surface-elevated);
+  box-shadow: 0 10px 30px var(--ombra-media);
+  max-width: calc(100vw - 32px);
+}
+.todo-v3-annulla button {
+  width: auto;
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: var(--v3-raggio-sm);
+  background: transparent;
+  color: var(--accent-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* --- drawer del dettaglio ------------------------------------------ */
+/* NON e' una terza colonna: e' fuori dal flusso, si apre sopra la lista
+ * e si chiude. La lista sotto resta larga quanto era. */
+.todo-v3-velo {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  z-index: 30;
+}
+.todo-v3-drawer {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  z-index: 31;
+  width: min(480px, 100vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-elevated);
+  border-left: 1px solid var(--border-strong);
+  box-shadow: -18px 0 40px var(--ombra-media);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.todo-v3-drawer-testata {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-elevated);
+  min-width: 0;
+}
+.todo-v3-drawer-chiudi {
+  width: 32px; height: 32px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--v3-raggio-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.todo-v3-drawer-corpo { padding: 16px; display: grid; gap: 18px; min-width: 0; }
+.todo-v3-drawer h1 { margin: 0; font-size: 19px; line-height: 1.35; overflow-wrap: anywhere; }
+.todo-v3-proprieta {
+  display: grid;
+  grid-template-columns: minmax(0, 116px) minmax(0, 1fr);
+  gap: 8px 12px;
+  align-items: center;
+  margin: 0;
+  min-width: 0;
+}
+.todo-v3-proprieta dt { color: var(--text-muted); font-size: 13px; }
+.todo-v3-proprieta dd { margin: 0; min-width: 0; }
+.todo-v3-valore {
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--v3-raggio-sm);
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.todo-v3-blocco > h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.todo-v3-descrizione {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--v3-raggio-sm);
+  background: var(--velo-fondo-basso);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.todo-v3-checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.todo-v3-checklist li {
+  display: grid;
+  grid-template-columns: 20px 20px minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+.todo-v3-checklist span { min-width: 0; overflow-wrap: anywhere; }
+.todo-v3-barra {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--velo-fondo-medio);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.todo-v3-barra i { display: block; height: 100%; background: var(--success); }
+.todo-v3-persone { display: flex; gap: 8px; flex-wrap: wrap; }
+.todo-v3-commento {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  min-width: 0;
+}
+.todo-v3-commento p { margin: 2px 0 0; overflow-wrap: anywhere; }
+.todo-v3-commento .quando { color: var(--text-muted); font-size: 12px; }
+.todo-v3-azioni { display: flex; flex-wrap: wrap; gap: 8px; }
+.todo-v3-azioni button {
+  width: auto;
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--v3-raggio-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.todo-v3-azioni button.pericolo { border-color: var(--danger); color: var(--danger-text); }
+
+/* --- inserimento rapido -------------------------------------------- */
+.todo-v3-rapido {
+  position: fixed;
+  z-index: 32;
+  top: 12vh; left: 50%;
+  transform: translateX(-50%);
+  width: min(680px, calc(100vw - 32px));
+  border: 1px solid var(--border-strong);
+  border-radius: var(--v3-raggio);
+  background: var(--surface-elevated);
+  box-shadow: 0 24px 60px var(--ombra-alta);
+  overflow: hidden;
+}
+.todo-v3-rapido input {
+  width: 100%;
+  padding: 16px 18px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 17px;
+}
+.todo-v3-rapido input::placeholder { color: var(--input-placeholder); }
+.todo-v3-letto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+.todo-v3-rapido footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  min-width: 0;
+}
+.todo-v3-rapido footer button {
+  width: auto;
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--v3-raggio-sm);
+  background: var(--accent);
+  color: var(--on-solid);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+/* `kbd` EREDITA IL COLORE, e non e' un dettaglio.
+ * Con `color: var(--text)` il tasto dentro il comando blu diventava testo
+ * scuro su fondo blu: misurato 2.75:1 al tema chiaro, cioe' sotto soglia
+ * proprio dove il comando e' piu' visibile. Il fondo di quel bottone e'
+ * `--accent` in entrambi i temi, quindi non esiste UN colore giusto per
+ * `kbd`: quello giusto e' quello di chi lo contiene. */
+kbd {
+  padding: 1px 6px;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+/* --- bacheca e calendario ------------------------------------------ */
+.todo-v3-bacheca {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(240px, 1fr);
+  gap: 12px;
+  padding: 12px;
+  overflow-x: auto;
+}
+.todo-v3-colonna {
+  border: 1px solid var(--border);
+  border-radius: var(--v3-raggio);
+  background: var(--velo-1-basso);
+  padding: 10px;
+  min-width: 0;
+}
+.todo-v3-carta {
+  border: 1px solid var(--border);
+  border-radius: var(--v3-raggio-sm);
+  background: var(--surface-elevated);
+  padding: 10px;
+  margin-bottom: 8px;
+  min-width: 0;
+}
+.todo-v3-carta p { margin: 0 0 6px; overflow-wrap: anywhere; }
+
+.todo-v3-calendario {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+  padding: 12px;
+  background: var(--border);
+  border-radius: var(--v3-raggio);
+  margin: 12px;
+}
+.todo-v3-giorno {
+  background: var(--sup-2);
+  min-height: 92px;
+  padding: 6px;
+  min-width: 0;
+}
+.todo-v3-giorno b { font-size: 12px; color: var(--text-muted); }
+.todo-v3-giorno .voce {
+  display: block;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--velo-3-alto);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- carico di lavoro ---------------------------------------------- */
+.todo-v3-carico { padding: 12px; display: grid; gap: 10px; }
+.todo-v3-carico-riga {
+  display: grid;
+  grid-template-columns: minmax(0, 180px) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+}
+.todo-v3-carico-riga .nome { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.todo-v3-carico-riga .barra { height: 14px; border-radius: 999px; background: var(--velo-fondo-medio); overflow: hidden; }
+.todo-v3-carico-riga .barra i { display: block; height: 100%; background: var(--accent); }
+.todo-v3-carico-riga .barra i.oltre { background: var(--danger); }
+
+/* ------------------------------------------------------------------ */
+/* MOBILE — lista a tutta larghezza, dettaglio a SCHERMO INTERO         */
+/* ------------------------------------------------------------------ */
+@media (max-width: 900px) {
+  .todo-v3 { grid-template-columns: 1fr; }
+  .todo-v3-nav {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    /* LO SCORRITORE E' IL GRUPPO, NON LA BARRA. Se scorresse la barra, il
+     * comando «Aggiungi» e il campo di ricerca uscirebbero dalla finestra
+     * insieme alle viste: si perde il comando che serve piu' spesso. */
+    overflow-x: visible;
+  }
+  .todo-v3-nav .todo-v3-gruppo { display: none; }
+  .todo-v3-nav .todo-v3-gruppo.mobile {
+    display: block;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .todo-v3-nav .todo-v3-gruppo.mobile h2 { display: none; }
+  /* LO SCORRITORE E' L'ELENCO STESSO.
+   * Metterlo sul contenitore lasciava l'`ul` largo quanto il genitore con
+   * i figli fuori: `scrollWidth 872` dentro `clientWidth 77`, cioe' un
+   * traboccamento vero — quello che non si vede guardando i riquadri. */
+  .todo-v3-nav .todo-v3-viste {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .todo-v3-nav .todo-v3-viste a { white-space: nowrap; }
+  .todo-v3-nuova { width: auto; flex: 0 0 auto; padding: 10px 12px; }
+  .todo-v3-drawer {
+    width: 100vw;
+    left: 0;
+    border-left: 0;
+  }
+  .todo-v3-rapido { top: 0; left: 0; transform: none; width: 100vw; border-radius: 0; }
+  .todo-v3-proprieta { grid-template-columns: 1fr; gap: 4px; }
+  .todo-v3-proprieta dt { margin-top: 6px; }
+  .todo-v3-carico-riga { grid-template-columns: minmax(0, 1fr) auto; }
+  .todo-v3-carico-riga .barra { grid-column: 1 / -1; }
+}
+
+/* L'ETICHETTA CHE SOLO IL LETTORE DI SCHERMO LEGGE.
+ *
+ * La classe e' PREFISSATA dal modulo, e non `sr-only`: quel nome non
+ * esiste in questa applicazione — misurato, zero occorrenze in
+ * `src/static` e nei template — e appoggiarsi a un nome che nessuno
+ * definisce e' la stessa cecita' del ripiego dietro un token
+ * inesistente, con un'altra faccia. Li' vinceva il ripiego; qui
+ * l'etichetta sarebbe rimasta VISIBILE, e nessun cancello statico
+ * l'avrebbe detto.
+ *
+ * `clip-path` piu' `clip`: il secondo e' deprecato ma e' cio' che
+ * capiscono i motori piu' vecchi, e i due non si contraddicono.
+ * Niente `display: none` ne' `visibility: hidden`, che toglierebbero
+ * l'etichetta anche al lettore di schermo — cioe' farebbero l'opposto
+ * di cio' che serve. */
+.todo-v3-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Gli stati degradati e il vuoto: due frasi, non un elenco vuoto.
+ * «Non lo so» e «non ce ne sono» hanno la stessa faccia se si mostra
+ * soltanto il nulla, e sono due fatti diversi. */
+.todo-v3-degradato,
+.todo-v3-vuoto {
+  margin: 12px 20px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--v3-raggio-sm, 8px);
+  background: var(--velo-1-basso);
+  color: var(--text-muted);
+}
+.todo-v3-degradato[role="alert"] {
+  border-color: var(--danger);
+  color: var(--danger-text);
+}
+
+/* Le `form` che avvolgono un solo comando non aggiungono spazio.
+ *
+ * NON `display: contents`: su una `form` alcuni motori perdono con la
+ * scatola anche la semantica dell'elemento, e si sarebbe barattata una
+ * comodita' di layout con un fatto di accessibilita'. La `form` resta
+ * una scatola normale e sta nella propria cella. */
+.todo-v3-riga > form,
+.todo-v3-azioni form { margin: 0; padding: 0; border: 0; }
+
+/* LA RIGA SENZA I COMANDI CHE ANCORA NON ESISTONO.
+ *
+ * La geometria di riferimento ha cinque colonne — maniglia di
+ * trascinamento, casella di selezione multipla, pastiglia, corpo,
+ * persona — perche' quelle funzioni sono nel mandato. Finche' non
+ * esistono, disegnarne le celle vuote occuperebbe 42 px per riga per
+ * mostrare niente: la riga ne dichiara tre, e le altre due tornano
+ * insieme al codice che le riempie. */
+.todo-v3-riga.senza-comandi {
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+}
+
+/* IL DETTAGLIO MODIFICABILE.
+ *
+ * `.todo-v3-valore` era nato per un `span` di sola lettura e ora veste
+ * anche `select` e `input`: la forma resta la stessa perche' cio' che si
+ * legge e cio' che si modifica devono essere la stessa riga, non due
+ * aspetti diversi della stessa informazione.
+ *
+ * `appearance: none` NO: la freccia del menu e il calendario del campo
+ * data sono le sole affordance che dicono «questo si puo' cambiare», e
+ * toglierle renderebbe un pannello modificabile identico a uno di sola
+ * lettura. `color-scheme` sui token fa gia' seguire il tema a quei
+ * controlli nativi. */
+select.todo-v3-valore,
+input.todo-v3-valore {
+  cursor: pointer;
+  white-space: normal;
+  text-overflow: clip;
+  /* Un `input[type=datetime-local]` ha una larghezza intrinseca propria:
+   * senza questo si allarga oltre la colonna e trascina il drawer. */
+  max-width: 100%;
+}
+input.todo-v3-valore { cursor: text; }
+
+/* Il menu a scelta multipla e' l'unico che ha bisogno di altezza: con
+ * `height` fissa mostrerebbe una voce sola e sembrerebbe un menu normale
+ * che ha perso le altre. */
+select.todo-v3-valore[multiple] {
+  height: auto;
+  min-height: 92px;
+  cursor: default;
+  overflow-y: auto;
+}
+
+/* Il comando di salvataggio. Dichiara `width` E `padding`, perche'
+ * `dashboard.css` ha una regola `button` globale con `width: 100%` e
+ * `padding: 15px 18px` che ha gia' prodotto tre difetti — fra cui un
+ * bottone che dichiarava 30x30 e ne disegnava 38x32. */
+.todo-v3-azioni button.todo-v3-salva {
+  width: auto;
+  padding: 9px 16px;
+  border: 1px solid transparent;
+  background: var(--accent);
+  color: var(--on-solid);
+  font-weight: 600;
+}
+
+.todo-v3-modifica { min-width: 0; }
+
+/* IL FUOCO SI VEDE SEMPRE, ed e' ristretto al modulo.
+ *
+ * Non `outline: none` con un ripiego, e non una regola globale: il fuoco
+ * del resto dell'applicazione appartiene al guscio, e sovrascriverlo da
+ * qui vorrebbe dire cambiare pagine che questa lane non tocca. */
+:where(.todo-v3, .todo-v3-drawer, .todo-v3-rapido, .todo-v3-annulla)
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* --- la pastiglia della priorita' ------------------------------------
+ *
+ * ESISTE PERCHE' UN COLORE DA SOLO NON E' UN'INFORMAZIONE.
+ * L'anello di `.todo-v3-completa` cambia tinta per P1 e P2 e per nessun
+ * altro livello: senza una parola accanto quel fatto sparisce per chi
+ * non distingue i due colori, sparisce in una stampa e sparisce per un
+ * lettore di schermo. Il testo e' dentro la pastiglia, non in un
+ * attributo: un `title` non si legge con la tastiera e non si stampa.
+ *
+ * Il colore resta un RINFORZO del testo, mai il suo unico portatore. */
+.todo-v3-priorita { font-weight: 650; }
+.todo-v3-priorita.p1 { color: var(--danger-text); border-color: var(--danger); }
+.todo-v3-priorita.p2 { color: var(--warning-text); border-color: var(--warning); }
+
+/* --- il pannello di creazione ---------------------------------------
+ *
+ * Riusa il guscio di `.todo-v3-rapido`, che il foglio dichiarava gia' e
+ * che nessun template rendeva: era geometria costruita e mai servita.
+ * I campi sono ESPLICITI e non un campo unico che interpreta: il
+ * riconoscimento di `#progetto @persona domani 18:00` non esiste nel
+ * prodotto, e disegnarlo qui darebbe un campo che sembra capire.
+ *
+ * Ogni comando dichiara larghezza E padding: `dashboard.css` ha una
+ * regola `button` globale che ha gia' prodotto tre difetti in questo
+ * programma, e `width: 100%` da sola non la neutralizza. */
+.todo-v3-campi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  min-width: 0;
+}
+.todo-v3-campi > div { min-width: 0; display: grid; gap: 4px; }
+.todo-v3-campi label {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+.todo-v3-campi select,
+.todo-v3-campi input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--v3-raggio-sm);
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  min-width: 0;
+}
+.todo-v3-rapido textarea {
+  width: 100%;
+  padding: 12px 18px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+  min-width: 0;
+}
+.todo-v3-rapido textarea::placeholder { color: var(--input-placeholder); }
+.todo-v3-annulla-crea {
+  padding: 7px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--v3-raggio-sm);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

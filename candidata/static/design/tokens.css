@@ -1,0 +1,1691 @@
+/* IL SISTEMA DI TEMA DI ARES — un solo file, due insiemi di valori.
+ *
+ * GENERATO. Si rigenera con `tools/theme/generate.py`; la parte scritta a
+ * mano vive in `tools/theme/semantic.css`, la regola che produce i valori
+ * chiari vive in `tools/theme/palette.py`.
+ *
+ * PERCHE' UN FILE SOLO
+ * --------------------
+ * La tentazione era due fogli, `dark.css` e `light.css`, scelti dal
+ * server. Sarebbe stata la soluzione piu' rapida e l'unica garantita a
+ * fallire: due fogli divergono al primo `border-color` corretto in uno e
+ * dimenticato nell'altro, e la divergenza non e' rossa da nessuna parte.
+ * Qui i valori stanno affiancati sullo stesso nome: cambiare un token
+ * costringe a guardare entrambi i temi.
+ *
+ * DUE STRATI
+ * ----------
+ * 1. La TAVOLOZZA (`--c-*`), generata: un token per ogni colore che i
+ *    fogli usavano scritto a mano, con il suo valore scuro (identico a
+ *    prima: il tema scuro non cambia aspetto) e il suo valore chiaro,
+ *    ottenuto dalla trasformazione per famiglia in `palette.py`.
+ * 2. I token SEMANTICI (`--bg`, `--text`, `--border`, ...), scritti a
+ *    mano: sono cio' che il codice nuovo deve consumare. La tavolozza
+ *    esiste per non dover riscrivere sessantamila righe di CSS; i nomi
+ *    semantici esistono perche' il codice nuovo non debba mai piu'
+ *    scrivere un colore.
+ *
+ * `color-scheme` non e' un dettaglio: senza, la barra di scorrimento
+ * nativa, i menu dei `<select>`, il calendario dei `<input type=date>` e
+ * il cursore di testo restano scuri su una pagina chiara. Sono le
+ * superfici che nessun CSS raggiunge.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* --- Token semantici: il tema scuro --- */
+  --bg: #020617;
+  --surface: rgba(10, 24, 48, 0.82);
+  --surface-elevated: #111c33;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: rgba(148, 163, 184, 0.18);
+  --border-strong: rgba(148, 163, 184, 0.32);
+  --accent: #2563eb;
+  --accent-text: #93c5fd;
+  --accent-contrast: #ffffff;
+  --danger: #ef4444;
+  --danger-text: #fca5a5;
+  --warning: #fbbf24;
+  --warning-text: #fde68a;
+  --success: #22c55e;
+  --success-text: #86efac;
+  --input-bg: rgba(2, 6, 23, 0.65);
+  --input-border: rgba(148, 163, 184, 0.26);
+  --input-placeholder: #7186a4;
+  --overlay: rgba(2, 6, 23, 0.72);
+  --focus-ring: #60a5fa;
+
+  /* --- LA SCALA DELLE SUPERFICI, e perche' esiste --------------------
+   * Il guscio cambiava tema e il CONTENUTO dei moduli restava scuro.
+   * Misurato in produzione su `/todos`: la radice passava a
+   * `color: rgb(22,32,47)` su `rgb(243,245,249)` — corretto — mentre
+   * `.todo-v2-shell` restava a `rgb(248,251,255)`, imposto da
+   * `--todo-v2-text` in un foglio di modulo. La causa non era la
+   * specificita' ne' il selettore del tema: era che i moduli
+   * dichiaravano i PROPRI token con valori scuri LETTERALI, senza alcuna
+   * variante chiara. Il tema li raggiungeva e non aveva nulla da
+   * cambiare.
+   *
+   * Misura del perimetro: 37 token di modulo con valore scuro letterale
+   * e 362 letterali scuri usati direttamente in `background`,
+   * `box-shadow`, `border` e `scrollbar-color`. Zero letterali scuri su
+   * `color`: il testo era gia' tokenizzato, ed e' per questo che il
+   * sintomo era testo chiaro su fondo chiaro.
+   *
+   * Questa scala e' il LIVELLO CONDIVISO che mancava. I moduli
+   * conservano la propria identita' — accenti, stati, raggi, spaziature
+   * restano loro — e consumano da qui le superfici, i veli e le ombre,
+   * che sono la parte che il tema deve poter ribaltare.
+   *
+   * I valori scuri sono scelti DENTRO le fasce di luminanza misurate nei
+   * fogli dei moduli, cosi' il tema scuro resta quello che era: la
+   * verifica che conta e' che al buio l'aspetto non cambi. */
+  --sup-fondo: #04101f;
+  --sup-1: #07182b;
+  --sup-2: #0d2340;
+  --sup-3: #16385c;
+
+  /* I VELI sono superfici TRASLUCIDE, e restano traslucide: sostituirle
+   * con un pieno cambierebbe la stratificazione in entrambi i temi, non
+   * solo al chiaro. */
+  --velo-fondo-basso: rgba(2, 8, 23, 0.30);
+  --velo-fondo-medio: rgba(2, 8, 23, 0.60);
+  --velo-fondo-alto: rgba(2, 8, 23, 0.85);
+  --velo-1-basso: rgba(7, 24, 43, 0.30);
+  --velo-1-medio: rgba(7, 24, 43, 0.60);
+  --velo-1-alto: rgba(7, 24, 43, 0.86);
+  --velo-2-basso: rgba(13, 28, 50, 0.30);
+  --velo-2-medio: rgba(13, 28, 50, 0.60);
+  --velo-2-alto: rgba(13, 28, 50, 0.90);
+  --velo-3-basso: rgba(20, 42, 72, 0.30);
+  --velo-3-medio: rgba(20, 42, 72, 0.60);
+  --velo-3-alto: rgba(20, 42, 72, 0.85);
+
+  --ombra-bassa: rgba(0, 0, 0, 0.30);
+  --ombra-media: rgba(0, 0, 0, 0.55);
+  --ombra-alta: rgba(0, 0, 0, 0.75);
+  /* Il testo sopra un pieno colorato. Identico nei due temi, e
+   * deliberatamente: un pulsante blu vuole testo bianco sia al buio sia
+   * al chiaro. E' il caso che una regola di inversione sbaglia sempre. */
+  --on-solid: #ffffff;
+  --on-solid-ink: #0b1220;
+
+  /* LA SCALA CATEGORIALE DEI GRAFICI, e gli stati che non ne fanno parte.
+   *
+   * Sono i soli token di questo file che devono superare DUE misure
+   * invece di una, e le due tirano in direzioni opposte:
+   *
+   *   1. contrasto >= 3:1 sul fondo su cui sono dipinti (WCAG 2.1
+   *      1.4.11: una barra, un marcatore, un bordo di 3px non sono
+   *      testo), in ENTRAMBI i temi;
+   *   2. distanza CIEDE2000 >= 10 fra due qualsiasi degli slot, dopo
+   *      aver simulato deuteranopia, protanopia e tritanopia.
+   *
+   * Il secondo requisito e' il motivo per cui questi valori non si
+   * possono correggere uno per volta: su fondo chiaro alzare il
+   * contrasto vuol dire scurire, e due tinte scurite convergono. La
+   * regola per famiglia di `palette.py` non puo' vederlo — guarda un
+   * colore alla volta — e infatti sul chiaro produceva serie 3 a 1.37:1
+   * e serie 4 a 1.78:1. Per questo la scala sta qui, scritta, con i due
+   * temi affiancati, e non discende da una curva.
+   *
+   * LE TINTE VENGONO DALLA PALETTE DI RIFERIMENTO (Okabe & Ito, 2008),
+   * di cui si prende per ciascun tema il PASSO che regge quel fondo:
+   * la tinta e' la stessa, cambia solo quanto e' profonda.
+   *
+   *   slot 1  blu ARES        `--c-b-056`, gia' conforme in entrambi
+   *   slot 2  vermiglio       #d55e00
+   *   slot 3  verde-blu       #009e73
+   *   slot 4  porpora-rosso   #cc79a7 / passo chiaro #c66a9d
+   *
+   * PERCHE' LO SLOT 4 NON E' PIU' AMBRA. Lo era, ed e' la sola voce
+   * della scala che cambia tinta e non solo passo. Misurato: sul fondo
+   * chiaro l'ambra e il vermiglio, entrambi portati sopra 3:1, distano
+   * 2.4 per un deuteranope — sono lo stesso colore. Non e' un difetto
+   * del passo, e' la coppia: sul bianco l'ambra si separa dal vermiglio
+   * SOLO restando chiara, cioe' sotto contrasto. Le altre voci della
+   * palette di riferimento sono state misurate tutte, e nessuna regge
+   * al posto suo: il giallo sul chiaro cade a 1.6 dal vermiglio per un
+   * deuteranope, l'azzurro-cielo a 7.8 dal verde-blu per un tritanope.
+   * Il porpora e' l'unico quarto slot con cui la scala non scende sotto
+   * 11.4 sul chiaro e 14.0 sullo scuro.
+   *
+   * Il conto completo — sette tinte, due temi, tre dicromatismi — lo
+   * rifa' `tests/test_accrediti_v2_serie_daltonismi.py` a ogni corsa. */
+  --chart-cat-1: var(--c-b-056);
+  --chart-cat-2: #d55e00;
+  --chart-cat-3: #009e73;
+  --chart-cat-4: #cc79a7;
+
+  /* Gli stati non sono «la serie 5»: hanno un significato, e il
+   * significato non si riordina. Verde/ambra/rosso e' la terna che i
+   * dicromatismi confondono per costruzione, e alzarne la separazione
+   * vorrebbe dire biforcare `--success`/`--warning`/`--danger` per un
+   * modulo solo. Qui il pavimento misurato e' 6.9 (ok/critico,
+   * deuteranopia) e la prova lo pretende, senza fingere che sia 10. */
+  --chart-ok: var(--c-g-060);
+  --chart-attention: var(--c-a-056);
+  --chart-critical: var(--c-r-072);
+
+  --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.22);
+  --shadow-strong: 0 24px 70px rgba(0, 0, 0, 0.36);
+
+  /* I nomi storici della piattaforma restano, ma smettono di essere
+   * valori: diventano alias dei token semantici. Ogni regola che gia'
+   * consumava `--ares-surface` si tematizza senza essere toccata. */
+  --ares-bg: var(--bg);
+  --ares-surface: var(--surface);
+  --ares-surface-soft: var(--surface-elevated);
+  --ares-line: var(--border);
+  --ares-text: var(--text);
+  --ares-muted: var(--text-muted);
+  --ares-blue: var(--accent);
+  --ares-green: var(--success);
+  --ares-orange: var(--warning);
+  --ares-purple: #8b5cf6;
+  --ares-red: var(--danger);
+
+  /* LA SCALA DEI RAGGI, allineata al sistema — ed e' la RADICE di cio' che
+   * i moduli avevano riscritto a mano.
+   *
+   * Erano 12 / 18 / 24 / 30. Ordini e Resi consumano questi nomi e non un
+   * numero, quindi erano gia' «puliti» a leggerli — e rendevano comunque
+   * pannelli da 18 e 30 px. Normalizzare i letterali nei moduli senza
+   * toccare questi quattro valori avrebbe corretto la scrittura e lasciato
+   * il disegno: la stessa forma del `podman info` che dice `rootless=true`
+   * mentre la build fallisce.
+   *
+   * ARES Operativo ha quattro raggi e un ruolo per ciascuno: 3 le tacche,
+   * 5 i controlli, 8 i pannelli, 12 le finestre modali. I quattro nomi
+   * esistenti ci mappano sopra senza che nessun consumatore cambi:
+   *   sm  controlli e celle          12 -> 5
+   *   md  pannelli e righe           18 -> 8
+   *   lg  pannelli grandi            24 -> 8
+   *   xl  finestre modali            30 -> 12
+   * `lg` e `md` collassano sullo stesso valore, e va detto: nel sistema non
+   * esistono due misure di pannello. Il nome resta perche' 34 dichiarazioni
+   * lo usano, e rinominarle sarebbe un secondo cambiamento dentro il primo. */
+  --ares-radius-sm: 5px;
+  --ares-radius-md: 8px;
+  --ares-radius-lg: 8px;
+  --ares-radius-xl: 12px;
+  --ares-shadow-soft: var(--shadow-soft);
+  --ares-shadow-strong: var(--shadow-strong);
+
+  /* --- La tavolozza: valori scuri --- */
+  --c-a-024-a12-bg: rgba(120, 53, 15, 0.12);
+  --c-a-024-a18-bg: rgba(120, 53, 15, 0.18);
+  --c-a-024-a20-bg: rgba(120, 53, 15, 0.2);
+  --c-a-024-a28-bg: rgba(120, 53, 15, 0.28);
+  --c-a-032: #92400e;
+  --c-a-032-ink: #a1560a;
+  --c-a-036-fill: #b45309;
+  --c-a-040: #c98500;
+  --c-a-040-a12-bg: rgba(180, 83, 9, 0.13);
+  --c-a-040-a16-bg: rgba(180, 83, 9, 0.16);
+  --c-a-040-a22-bg: rgba(180, 83, 9, 0.22);
+  --c-a-040-a24-bg: rgba(180, 83, 9, 0.24);
+  --c-a-040-a92-ln: rgba(194, 65, 12, 0.92);
+  --c-a-048: #ff8a00;
+  --c-a-048-a08-bg: rgba(245, 158, 11, 0.08);
+  --c-a-048-a10-bg: rgba(255, 138, 0, 0.1);
+  --c-a-048-a12-bg: rgba(245, 158, 11, 0.12);
+  --c-a-048-a14-ln: rgba(245, 158, 11, 0.14);
+  --c-a-048-a16-bg: rgba(245, 158, 11, 0.15);
+  --c-a-048-a18-bg: rgba(255, 138, 0, 0.18);
+  --c-a-048-a22-bg: rgba(245, 158, 11, 0.22);
+  --c-a-048-a22-ln: rgba(245, 158, 11, 0.22);
+  --c-a-048-a28-bg: rgba(220, 150, 40, 0.28);
+  --c-a-048-a34-ln: rgba(245, 158, 11, 0.34);
+  --c-a-048-a36-ln: rgba(245, 158, 11, 0.36);
+  --c-a-048-a44-ln: rgba(255, 138, 0, 0.45);
+  --c-a-048-a50-ln: rgba(255, 138, 0, 0.5);
+  --c-a-048-a56-ln: rgba(245, 158, 11, 0.55);
+  --c-a-052: #f59e0b;
+  --c-a-052-fill: #facc15;
+  --c-a-052-ink: #d8952a;
+  --c-a-056: #fbbf24;
+  --c-a-056-a06-bg: rgba(251, 191, 36, 0.06);
+  --c-a-056-a14-bg: rgba(249, 115, 22, 0.14);
+  --c-a-056-a16-bg: rgba(249, 115, 22, 0.16);
+  --c-a-056-a16-ln: rgba(249, 115, 22, 0.15);
+  --c-a-056-a18-bg: rgba(249, 115, 22, 0.18);
+  --c-a-056-a18-ln: rgba(251, 191, 36, 0.18);
+  --c-a-056-a20-bg: rgba(249, 115, 22, 0.2);
+  --c-a-056-a22-ln: rgba(250, 204, 21, 0.22);
+  --c-a-056-a28-ln: rgba(251, 191, 36, 0.28);
+  --c-a-056-a30-ln: rgba(251, 191, 36, 0.3);
+  --c-a-056-a32-ln: rgba(251, 191, 36, 0.32);
+  --c-a-056-a34-ln: rgba(251, 191, 36, 0.34);
+  --c-a-056-a36-ln: rgba(251, 191, 36, 0.35);
+  --c-a-056-a38-ln: rgba(251, 191, 36, 0.38);
+  --c-a-056-a40-ln: rgba(251, 191, 36, 0.4);
+  --c-a-056-a42-ln: rgba(251, 191, 36, 0.42);
+  --c-a-056-a46-ln: rgba(251, 191, 36, 0.46);
+  --c-a-056-a50-ln: rgba(251, 191, 36, 0.5);
+  --c-a-056-a60-ln: rgba(249, 115, 22, 0.6);
+  --c-a-056-a70-ln: rgba(250, 204, 21, 0.7);
+  --c-a-056-a76-bg: rgba(249, 115, 22, 0.75);
+  --c-a-056-fill: #fbbf24;
+  --c-a-060: #fb923c;
+  --c-a-064: #fcd34d;
+  --c-a-064-a12-ln: rgba(251, 146, 60, 0.12);
+  --c-a-064-a26-ln: rgba(251, 146, 60, 0.26);
+  --c-a-064-a28-ln: rgba(251, 146, 60, 0.28);
+  --c-a-064-a38-ln: rgba(251, 146, 60, 0.38);
+  --c-a-064-a40-ln: rgba(251, 146, 60, 0.4);
+  --c-a-064-a42-ln: rgba(251, 146, 60, 0.42);
+  --c-a-064-a62-ln: rgba(251, 146, 60, 0.62);
+  --c-a-072: #fdba74;
+  --c-a-076: #d9cda8;
+  --c-a-080: #e7d6b0;
+  --c-a-084: #fed7aa;
+  --c-a-088: #fef3c7;
+  --c-a-096: #fff7ed;
+  --c-b-016-a10-bg: rgba(8, 47, 73, 0.1);
+  --c-b-016-a42-bg: rgba(20, 50, 82, 0.42);
+  --c-b-016-a46-bg: rgba(20, 50, 82, 0.46);
+  --c-b-016-a54-bg: rgba(20, 50, 82, 0.54);
+  --c-b-016-a66-bg: rgba(20, 50, 82, 0.66);
+  --c-b-016-a72-bg: rgba(20, 50, 82, 0.72);
+  --c-b-016-a74-bg: rgba(20, 50, 82, 0.74);
+  --c-b-016-a78-bg: rgba(20, 50, 82, 0.78);
+  --c-b-016-a90-bg: rgba(20, 49, 82, 0.9);
+  --c-b-016-a92-bg: rgba(20, 49, 82, 0.92);
+  --c-b-016-a96-bg: rgba(15, 42, 75, 0.96);
+  --c-b-020: #143252;
+  --c-b-024: #2e1d58;
+  --c-b-024-a92-bg: rgba(49, 20, 91, 0.92);
+  --c-b-024-a96-fill: rgba(24, 54, 89, 0.96);
+  --c-b-024-a98-bg: rgba(25, 57, 101, 0.98);
+  --c-b-028: #075985;
+  --c-b-028-fill: #173f75;
+  --c-b-032: #0369a1;
+  --c-b-032-a10-bg: rgba(14, 116, 144, 0.1);
+  --c-b-032-a16-bg: rgba(3, 105, 161, 0.16);
+  --c-b-032-a98-bg: rgba(30, 64, 115, 0.98);
+  --c-b-036-fill: #4c1d95;
+  --c-b-040-a14-bg: rgba(30, 64, 175, 0.14);
+  --c-b-040-a16-bg: rgba(30, 64, 175, 0.16);
+  --c-b-040-a18-bg: rgba(30, 64, 175, 0.18);
+  --c-b-040-a22-bg: rgba(2, 132, 199, 0.22);
+  --c-b-040-a24-bg: rgba(30, 64, 175, 0.24);
+  --c-b-040-a32-bg: rgba(30, 64, 175, 0.32);
+  --c-b-040-a34-bg: rgba(30, 64, 175, 0.34);
+  --c-b-040-a42-bg: rgba(30, 64, 175, 0.42);
+  --c-b-040-fill: #0284c7;
+  --c-b-048: #1d4ed8;
+  --c-b-048-a08-bg: rgba(14, 165, 233, 0.08);
+  --c-b-048-a10-bg: rgba(14, 165, 233, 0.1);
+  --c-b-048-a12-bg: rgba(14, 165, 233, 0.12);
+  --c-b-048-a14-bg: rgba(14, 165, 233, 0.14);
+  --c-b-048-a16-bg: rgba(14, 165, 233, 0.15);
+  --c-b-048-a22-ln: rgba(29, 78, 216, 0.22);
+  --c-b-048-a24-bg: rgba(29, 78, 216, 0.24);
+  --c-b-048-a24-ln: rgba(14, 165, 233, 0.25);
+  --c-b-048-a28-bg: rgba(29, 78, 216, 0.28);
+  --c-b-048-a34-ln: rgba(14, 165, 233, 0.34);
+  --c-b-048-a36-ln: rgba(14, 165, 233, 0.35);
+  --c-b-048-a38-bg: rgba(14, 165, 233, 0.38);
+  --c-b-048-a44-ln: rgba(14, 165, 233, 0.45);
+  --c-b-048-a70-bg: rgba(29, 78, 216, 0.7);
+  --c-b-048-a76-bg: rgba(14, 165, 233, 0.75);
+  --c-b-048-a88-fill: rgba(14, 165, 233, 0.88);
+  --c-b-048-a92-fill: rgba(29, 78, 216, 0.92);
+  --c-b-048-a96-fill: rgba(14, 165, 233, 0.96);
+  --c-b-048-fill: #1d4ed8;
+  --c-b-048-ink: #1d4ed8;
+  --c-b-052: #1287ff;
+  --c-b-052-fill: #2563eb;
+  --c-b-056: #2f6feb;
+  --c-b-056-a04-ln: rgba(56, 189, 248, 0.05);
+  --c-b-056-a06-ln: rgba(59, 130, 246, 0.06);
+  --c-b-056-a08-bg: rgba(59, 130, 246, 0.08);
+  --c-b-056-a08-ln: rgba(59, 130, 246, 0.09);
+  --c-b-056-a10-bg: rgba(59, 130, 246, 0.1);
+  --c-b-056-a10-ln: rgba(59, 130, 246, 0.1);
+  --c-b-056-a12-bg: rgba(59, 130, 246, 0.12);
+  --c-b-056-a12-ln: rgba(59, 130, 246, 0.12);
+  --c-b-056-a14-bg: rgba(37, 99, 235, 0.14);
+  --c-b-056-a14-ln: rgba(37, 99, 235, 0.14);
+  --c-b-056-a16-bg: rgba(59, 130, 246, 0.16);
+  --c-b-056-a16-ln: rgba(59, 130, 246, 0.16);
+  --c-b-056-a18-bg: rgba(59, 130, 246, 0.18);
+  --c-b-056-a18-ln: rgba(56, 189, 248, 0.18);
+  --c-b-056-a20-bg: rgba(59, 130, 246, 0.2);
+  --c-b-056-a20-ln: rgba(37, 99, 235, 0.2);
+  --c-b-056-a22-bg: rgba(59, 130, 246, 0.22);
+  --c-b-056-a22-ln: rgba(37, 99, 235, 0.22);
+  --c-b-056-a24-bg: rgba(37, 99, 235, 0.24);
+  --c-b-056-a24-ln: rgba(59, 130, 246, 0.24);
+  --c-b-056-a26-bg: rgba(37, 99, 235, 0.26);
+  --c-b-056-a26-ln: rgba(37, 99, 235, 0.26);
+  --c-b-056-a28-bg: rgba(37, 99, 235, 0.28);
+  --c-b-056-a28-ln: rgba(56, 189, 248, 0.28);
+  --c-b-056-a30-bg: rgba(37, 99, 235, 0.3);
+  --c-b-056-a32-bg: rgba(37, 99, 235, 0.32);
+  --c-b-056-a32-ln: rgba(59, 130, 246, 0.32);
+  --c-b-056-a34-bg: rgba(37, 99, 235, 0.34);
+  --c-b-056-a34-ln: rgba(56, 189, 248, 0.34);
+  --c-b-056-a36-bg: rgba(37, 99, 235, 0.36);
+  --c-b-056-a36-ln: rgba(18, 135, 255, 0.35);
+  --c-b-056-a38-ln: rgba(56, 189, 248, 0.38);
+  --c-b-056-a40-ln: rgba(18, 135, 255, 0.4);
+  --c-b-056-a42-ln: rgba(18, 135, 255, 0.42);
+  --c-b-056-a44-ln: rgba(56, 189, 248, 0.45);
+  --c-b-056-a46-ln: rgba(59, 130, 246, 0.46);
+  --c-b-056-a48-ln: rgba(56, 189, 248, 0.48);
+  --c-b-056-a56-ln: rgba(59, 130, 246, 0.55);
+  --c-b-056-a58-bg: rgba(56, 189, 248, 0.58);
+  --c-b-056-a64-ln: rgba(59, 130, 246, 0.65);
+  --c-b-056-a72-bg: rgba(56, 189, 248, 0.72);
+  --c-b-056-a72-ln: rgba(59, 130, 246, 0.72);
+  --c-b-056-a76-ln: rgba(59, 130, 246, 0.75);
+  --c-b-056-a78-bg: rgba(56, 189, 248, 0.78);
+  --c-b-056-a84-bg: rgba(59, 130, 246, 0.85);
+  --c-b-056-a88-ln: rgba(59, 130, 246, 0.88);
+  --c-b-056-a90-fill: rgba(37, 99, 235, 0.9);
+  --c-b-056-a90-ln: rgba(37, 99, 235, 0.9);
+  --c-b-056-a92-fill: rgba(37, 99, 235, 0.92);
+  --c-b-056-a92-ln: rgba(59, 130, 246, 0.92);
+  --c-b-056-a96-fill: rgba(37, 99, 235, 0.96);
+  --c-b-056-a96-ln: rgba(37, 99, 235, 0.95);
+  --c-b-056-fill: #2f6fe8;
+  --c-b-056-ink: #2f6feb;
+  --c-b-060: #3b82f6;
+  --c-b-060-fill: #38bdf8;
+  --c-b-064: #4a7dff;
+  --c-b-064-a04-bg: rgba(96, 165, 250, 0.05);
+  --c-b-064-a06-bg: rgba(96, 165, 250, 0.06);
+  --c-b-064-a08-bg: rgba(96, 165, 250, 0.08);
+  --c-b-064-a10-bg: rgba(96, 165, 250, 0.1);
+  --c-b-064-a10-ln: rgba(96, 165, 250, 0.1);
+  --c-b-064-a12-bg: rgba(96, 165, 250, 0.13);
+  --c-b-064-a12-ln: rgba(96, 165, 250, 0.12);
+  --c-b-064-a14-bg: rgba(139, 92, 246, 0.14);
+  --c-b-064-a14-ln: rgba(96, 165, 250, 0.14);
+  --c-b-064-a16-bg: rgba(96, 165, 250, 0.15);
+  --c-b-064-a16-ln: rgba(96, 165, 250, 0.16);
+  --c-b-064-a18-bg: rgba(139, 92, 246, 0.18);
+  --c-b-064-a18-ln: rgba(96, 165, 250, 0.18);
+  --c-b-064-a20-ln: rgba(96, 165, 250, 0.2);
+  --c-b-064-a22-ln: rgba(82, 144, 255, 0.22);
+  --c-b-064-a24-ln: rgba(96, 165, 250, 0.24);
+  --c-b-064-a26-ln: rgba(96, 165, 250, 0.26);
+  --c-b-064-a28-ln: rgba(96, 165, 250, 0.28);
+  --c-b-064-a30-ln: rgba(96, 165, 250, 0.3);
+  --c-b-064-a32-ln: rgba(96, 165, 250, 0.32);
+  --c-b-064-a34-bg: rgba(96, 165, 250, 0.34);
+  --c-b-064-a34-ln: rgba(96, 165, 250, 0.34);
+  --c-b-064-a36-ln: rgba(96, 165, 250, 0.36);
+  --c-b-064-a38-ln: rgba(96, 165, 250, 0.38);
+  --c-b-064-a40-ln: rgba(139, 92, 246, 0.4);
+  --c-b-064-a42-ln: rgba(96, 165, 250, 0.42);
+  --c-b-064-a44-ln: rgba(96, 165, 250, 0.43);
+  --c-b-064-a46-ln: rgba(96, 165, 250, 0.46);
+  --c-b-064-a48-ln: rgba(96, 165, 250, 0.48);
+  --c-b-064-a50-bg: rgba(96, 165, 250, 0.5);
+  --c-b-064-a50-ln: rgba(96, 165, 250, 0.5);
+  --c-b-064-a52-ln: rgba(96, 165, 250, 0.52);
+  --c-b-064-a54-ln: rgba(96, 165, 250, 0.54);
+  --c-b-064-a56-ln: rgba(96, 165, 250, 0.56);
+  --c-b-064-a58-ln: rgba(96, 165, 250, 0.58);
+  --c-b-064-a60-ln: rgba(96, 165, 250, 0.6);
+  --c-b-064-a62-ln: rgba(96, 165, 250, 0.62);
+  --c-b-064-a66-ln: rgba(96, 165, 250, 0.66);
+  --c-b-064-a68-ln: rgba(96, 165, 250, 0.68);
+  --c-b-064-a70-ln: rgba(96, 165, 250, 0.7);
+  --c-b-064-a72-ln: rgba(96, 165, 250, 0.72);
+  --c-b-064-a76-bg: rgba(96, 165, 250, 0.75);
+  --c-b-064-a84-ln: rgba(96, 165, 250, 0.85);
+  --c-b-064-a96-fill: rgba(99, 102, 241, 0.95);
+  --c-b-064-fill: #4a7dff;
+  --c-b-068: #8b5cf6;
+  --c-b-068-fill: #60a5fa;
+  --c-b-072: #818cf8;
+  --c-b-072-a64-ln: rgba(125, 211, 252, 0.65);
+  --c-b-076: #7da4ff;
+  --c-b-076-fill: #a78bfa;
+  --c-b-080: #93c5fd;
+  --c-b-080-a34-ln: rgba(167, 139, 250, 0.34);
+  --c-b-080-a38-ln: rgba(147, 197, 253, 0.38);
+  --c-b-080-a42-ln: rgba(147, 197, 253, 0.42);
+  --c-b-080-a44-ln: rgba(147, 197, 253, 0.43);
+  --c-b-080-a48-ln: rgba(147, 197, 253, 0.48);
+  --c-b-080-a52-ln: rgba(147, 197, 253, 0.52);
+  --c-b-080-a58-ln: rgba(147, 197, 253, 0.58);
+  --c-b-080-a74-ln: rgba(147, 197, 253, 0.74);
+  --c-b-084: #c4b5fd;
+  --c-b-088: #bfdbfe;
+  --c-c-008-a54-bg: rgba(7, 31, 31, 0.54);
+  --c-c-020: #115e59;
+  --c-c-040: #14b8a6;
+  --c-c-040-a86-fill: rgba(6, 182, 212, 0.86);
+  --c-c-044: #06b6d4;
+  --c-c-044-fill: #06b6d4;
+  --c-c-048-a46-ln: rgba(45, 212, 191, 0.46);
+  --c-c-052: #22d3ee;
+  --c-c-052-fill: #22d3ee;
+  --c-c-056-a16-bg: rgba(34, 211, 238, 0.16);
+  --c-c-056-a28-ln: rgba(34, 211, 238, 0.28);
+  --c-c-068: #67e8f9;
+  --c-g-008-a92-bg: rgba(5, 46, 22, 0.92);
+  --c-g-016: #064e3b;
+  --c-g-016-a16-bg: rgba(6, 78, 59, 0.16);
+  --c-g-016-a20-bg: rgba(6, 95, 70, 0.2);
+  --c-g-016-a22-bg: rgba(6, 78, 59, 0.22);
+  --c-g-016-a28-bg: rgba(6, 78, 59, 0.28);
+  --c-g-024: #166534;
+  --c-g-024-a14-bg: rgba(22, 101, 52, 0.14);
+  --c-g-024-a16-bg: rgba(20, 83, 45, 0.16);
+  --c-g-024-a18-bg: rgba(22, 101, 52, 0.18);
+  --c-g-024-a20-bg: rgba(22, 101, 52, 0.2);
+  --c-g-024-a22-bg: rgba(20, 83, 45, 0.22);
+  --c-g-024-a36-bg: rgba(20, 83, 45, 0.35);
+  --c-g-024-a72-bg: rgba(22, 101, 52, 0.72);
+  --c-g-032-a08-bg: rgba(27, 127, 77, 0.08);
+  --c-g-032-a20-bg: rgba(21, 128, 61, 0.2);
+  --c-g-032-a26-bg: rgba(21, 128, 61, 0.26);
+  --c-g-032-a52-bg: rgba(21, 128, 61, 0.52);
+  --c-g-032-ink: #1b7f4d;
+  --c-g-036: #16a34a;
+  --c-g-040-a10-ln: rgba(22, 163, 74, 0.1);
+  --c-g-040-a12-bg: rgba(22, 163, 74, 0.12);
+  --c-g-040-a22-ln: rgba(22, 163, 74, 0.22);
+  --c-g-040-a96-bg: rgba(22, 163, 74, 0.95);
+  --c-g-040-a96-ln: rgba(22, 163, 74, 0.95);
+  --c-g-044: #22c55e;
+  --c-g-048: #20d34a;
+  --c-g-048-a08-bg: rgba(32, 211, 74, 0.08);
+  --c-g-048-a10-bg: rgba(34, 197, 94, 0.1);
+  --c-g-048-a12-bg: rgba(34, 197, 94, 0.13);
+  --c-g-048-a12-ln: rgba(34, 197, 94, 0.12);
+  --c-g-048-a14-bg: rgba(32, 211, 74, 0.14);
+  --c-g-048-a16-bg: rgba(60, 180, 110, 0.16);
+  --c-g-048-a22-ln: rgba(34, 197, 94, 0.22);
+  --c-g-048-a24-bg: rgba(60, 180, 110, 0.25);
+  --c-g-048-a24-ln: rgba(34, 197, 94, 0.25);
+  --c-g-048-a26-bg: rgba(34, 197, 94, 0.26);
+  --c-g-048-a28-ln: rgba(52, 211, 153, 0.28);
+  --c-g-048-a30-ln: rgba(52, 211, 153, 0.3);
+  --c-g-048-a32-ln: rgba(34, 197, 94, 0.32);
+  --c-g-048-a34-bg: rgba(34, 197, 94, 0.34);
+  --c-g-048-a36-bg: rgba(34, 197, 94, 0.35);
+  --c-g-048-a36-ln: rgba(32, 211, 74, 0.35);
+  --c-g-048-a42-bg: rgba(34, 197, 94, 0.42);
+  --c-g-048-a42-ln: rgba(52, 211, 153, 0.42);
+  --c-g-048-a44-ln: rgba(60, 180, 110, 0.45);
+  --c-g-048-a50-ln: rgba(32, 211, 74, 0.5);
+  --c-g-052: #34d399;
+  --c-g-056-a08-bg: rgba(74, 222, 128, 0.09);
+  --c-g-056-a10-bg: rgba(74, 222, 128, 0.1);
+  --c-g-056-a10-ln: rgba(74, 222, 128, 0.1);
+  --c-g-056-a12-bg: rgba(74, 222, 128, 0.11);
+  --c-g-056-a12-ln: rgba(74, 222, 128, 0.12);
+  --c-g-056-a16-ln: rgba(74, 222, 128, 0.16);
+  --c-g-056-a20-ln: rgba(74, 222, 128, 0.2);
+  --c-g-056-a22-ln: rgba(74, 222, 128, 0.22);
+  --c-g-056-a24-ln: rgba(74, 222, 128, 0.24);
+  --c-g-056-a28-ln: rgba(74, 222, 128, 0.28);
+  --c-g-056-a30-ln: rgba(74, 222, 128, 0.3);
+  --c-g-056-a32-ln: rgba(74, 222, 128, 0.32);
+  --c-g-056-a34-ln: rgba(74, 222, 128, 0.34);
+  --c-g-056-a36-ln: rgba(74, 222, 128, 0.36);
+  --c-g-056-a38-ln: rgba(74, 222, 128, 0.38);
+  --c-g-056-a40-ln: rgba(74, 222, 128, 0.4);
+  --c-g-056-a42-ln: rgba(74, 222, 128, 0.42);
+  --c-g-056-a44-ln: rgba(74, 222, 128, 0.45);
+  --c-g-056-a46-ln: rgba(74, 222, 128, 0.46);
+  --c-g-056-a72-ln: rgba(74, 222, 128, 0.72);
+  --c-g-060: #4ade80;
+  --c-g-072: #86efac;
+  --c-g-072-a42-fg: rgba(134, 239, 172, 0.42);
+  --c-g-080: #a7f3d0;
+  --c-g-080-fill: #a7f3d0;
+  --c-g-084: #bbf7d0;
+  --c-g-088: #ccfbf1;
+  --c-g-092-fill: #dcfce7;
+  --c-g-096: #ecfdf5;
+  --c-n-000: #000000;
+  --c-n-000-a08-ln: rgba(0, 0, 0, 0.08);
+  --c-n-000-a10-ln: rgba(0, 0, 0, 0.1);
+  --c-n-000-a12-ln: rgba(0, 0, 0, 0.12);
+  --c-n-000-a14-ln: rgba(0, 0, 0, 0.14);
+  --c-n-000-a16-bg: rgba(0, 0, 0, 0.15);
+  --c-n-000-a16-ln: rgba(0, 0, 0, 0.16);
+  --c-n-000-a18-ln: rgba(0, 0, 0, 0.18);
+  --c-n-000-a20-ln: rgba(0, 0, 0, 0.2);
+  --c-n-000-a22-ln: rgba(0, 0, 0, 0.22);
+  --c-n-000-a24-ln: rgba(0, 0, 0, 0.24);
+  --c-n-000-a26-ln: rgba(0, 0, 0, 0.26);
+  --c-n-000-a28-ln: rgba(0, 0, 0, 0.28);
+  --c-n-000-a30-ln: rgba(0, 0, 0, 0.3);
+  --c-n-000-a32-ln: rgba(0, 0, 0, 0.32);
+  --c-n-000-a34-ln: rgba(0, 0, 0, 0.34);
+  --c-n-000-a36-ln: rgba(0, 0, 0, 0.35);
+  --c-n-000-a38-ln: rgba(0, 0, 0, 0.38);
+  --c-n-000-a42-ln: rgba(0, 0, 0, 0.42);
+  --c-n-000-a44-ln: rgba(0, 0, 0, 0.44);
+  --c-n-000-a56-ln: rgba(0, 0, 0, 0.55);
+  --c-n-004: #020817;
+  --c-n-008: #091726;
+  --c-n-008-a04-bg: rgba(15, 23, 42, 0.05);
+  --c-n-008-a08-ln: rgba(15, 23, 42, 0.08);
+  --c-n-008-a18-bg: rgba(15, 23, 42, 0.18);
+  --c-n-008-a18-ln: rgba(2, 8, 23, 0.18);
+  --c-n-008-a20-bg: rgba(3, 13, 29, 0.2);
+  --c-n-008-a20-ln: rgba(2, 6, 23, 0.2);
+  --c-n-008-a22-ln: rgba(2, 8, 23, 0.22);
+  --c-n-008-a26-bg: rgba(3, 13, 29, 0.26);
+  --c-n-008-a28-bg: rgba(3, 13, 29, 0.28);
+  --c-n-008-a32-bg: rgba(3, 13, 29, 0.31);
+  --c-n-008-a34-bg: rgba(3, 13, 29, 0.34);
+  --c-n-008-a34-ln: rgba(3, 13, 29, 0.34);
+  --c-n-008-a36-bg: rgba(2, 6, 23, 0.36);
+  --c-n-008-a36-ln: rgba(3, 13, 29, 0.36);
+  --c-n-008-a38-bg: rgba(3, 13, 29, 0.38);
+  --c-n-008-a40-bg: rgba(3, 13, 29, 0.39);
+  --c-n-008-a42-bg: rgba(7, 20, 38, 0.42);
+  --c-n-008-a42-ln: rgba(3, 13, 29, 0.42);
+  --c-n-008-a44-bg: rgba(7, 20, 38, 0.45);
+  --c-n-008-a44-ln: rgba(15, 23, 42, 0.45);
+  --c-n-008-a46-bg: rgba(3, 13, 29, 0.46);
+  --c-n-008-a48-bg: rgba(7, 20, 38, 0.48);
+  --c-n-008-a50-bg: rgba(2, 12, 27, 0.5);
+  --c-n-008-a52-bg: rgba(3, 13, 29, 0.52);
+  --c-n-008-a54-bg: rgba(3, 13, 29, 0.54);
+  --c-n-008-a56-bg: rgba(7, 20, 38, 0.55);
+  --c-n-008-a56-ln: rgba(2, 8, 20, 0.55);
+  --c-n-008-a58-bg: rgba(7, 20, 38, 0.58);
+  --c-n-008-a60-bg: rgba(2, 8, 23, 0.6);
+  --c-n-008-a62-bg: rgba(3, 13, 29, 0.62);
+  --c-n-008-a64-bg: rgba(2, 8, 23, 0.65);
+  --c-n-008-a66-bg: rgba(15, 23, 42, 0.66);
+  --c-n-008-a68-bg: rgba(7, 20, 38, 0.68);
+  --c-n-008-a70-bg: rgba(5, 15, 31, 0.7);
+  --c-n-008-a72-bg: rgba(7, 20, 38, 0.72);
+  --c-n-008-a74-bg: rgba(4, 17, 31, 0.74);
+  --c-n-008-a76-bg: rgba(7, 20, 38, 0.76);
+  --c-n-008-a78-bg: rgba(3, 13, 29, 0.78);
+  --c-n-008-a80-bg: rgba(2, 8, 23, 0.8);
+  --c-n-008-a82-bg: rgba(8, 26, 46, 0.82);
+  --c-n-008-a82-ln: rgba(10, 24, 48, 0.82);
+  --c-n-008-a84-bg: rgba(7, 20, 38, 0.85);
+  --c-n-008-a84-ln: rgba(15, 23, 42, 0.85);
+  --c-n-008-a86-bg: rgba(7, 24, 43, 0.86);
+  --c-n-008-a86-ln: rgba(7, 24, 43, 0.86);
+  --c-n-008-a88-bg: rgba(7, 24, 43, 0.88);
+  --c-n-008-a90-bg: rgba(15, 23, 42, 0.9);
+  --c-n-008-a90-ln: rgba(2, 8, 23, 0.9);
+  --c-n-008-a92-bg: rgba(7, 20, 38, 0.92);
+  --c-n-008-a92-ln: rgba(8, 25, 47, 0.92);
+  --c-n-008-a94-bg: rgba(9, 23, 38, 0.94);
+  --c-n-008-a96-bg: rgba(7, 20, 38, 0.97);
+  --c-n-008-a98-bg: rgba(7, 20, 38, 0.98);
+  --c-n-012: #0b2039;
+  --c-n-012-ink: #0f172a;
+  --c-n-016: #12263f;
+  --c-n-016-a48-bg: rgba(30, 41, 59, 0.48);
+  --c-n-016-a52-bg: rgba(15, 35, 64, 0.52);
+  --c-n-016-a56-bg: rgba(30, 41, 59, 0.56);
+  --c-n-016-a62-bg: rgba(9, 30, 53, 0.62);
+  --c-n-016-a70-bg: rgba(30, 41, 59, 0.7);
+  --c-n-016-a72-bg: rgba(15, 32, 58, 0.72);
+  --c-n-016-a72-ln: rgba(15, 30, 58, 0.72);
+  --c-n-016-a78-ln: rgba(13, 35, 64, 0.78);
+  --c-n-016-a82-bg: rgba(14, 37, 63, 0.82);
+  --c-n-016-a88-bg: rgba(13, 28, 50, 0.88);
+  --c-n-016-a90-bg: rgba(11, 32, 55, 0.9);
+  --c-n-016-a92-bg: rgba(18, 42, 70, 0.92);
+  --c-n-016-a94-bg: rgba(18, 42, 70, 0.94);
+  --c-n-016-a94-ln: rgba(13, 28, 50, 0.94);
+  --c-n-016-a96-bg: rgba(18, 42, 70, 0.96);
+  --c-n-016-a96-ln: rgba(17, 36, 64, 0.96);
+  --c-n-016-a98-bg: rgba(11, 30, 57, 0.98);
+  --c-n-016-a98-ln: rgba(17, 36, 64, 0.98);
+  --c-n-016-ink: #1d2330;
+  --c-n-024-a84-bg: rgba(51, 65, 85, 0.85);
+  --c-n-024-a94-ln: rgba(51, 65, 85, 0.94);
+  --c-n-028-ink: #334155;
+  --c-n-032-a16-ln: rgba(71, 85, 105, 0.16);
+  --c-n-032-a46-bg: rgba(71, 85, 105, 0.46);
+  --c-n-036-ink: #475569;
+  --c-n-040: #5a6069;
+  --c-n-040-a08-bg: rgba(85, 96, 110, 0.08);
+  --c-n-040-ink: #55606e;
+  --c-n-048: #64748b;
+  --c-n-048-a06-bg: rgba(128, 128, 128, 0.06);
+  --c-n-048-a12-bg: rgba(100, 116, 139, 0.12);
+  --c-n-048-a14-bg: rgba(128, 128, 128, 0.14);
+  --c-n-048-a16-ln: rgba(128, 128, 128, 0.15);
+  --c-n-048-a18-ln: rgba(128, 128, 128, 0.18);
+  --c-n-048-a20-ln: rgba(128, 128, 128, 0.2);
+  --c-n-048-a22-bg: rgba(128, 128, 128, 0.22);
+  --c-n-048-a24-ln: rgba(128, 128, 128, 0.25);
+  --c-n-048-a28-ln: rgba(128, 128, 128, 0.28);
+  --c-n-048-a30-ln: rgba(128, 128, 128, 0.3);
+  --c-n-048-a36-ln: rgba(128, 128, 128, 0.35);
+  --c-n-048-a40-ln: rgba(128, 128, 128, 0.4);
+  --c-n-048-ink: #607792;
+  --c-n-052-ink: #6f86a1;
+  --c-n-056-ink: #7186a4;
+  --c-n-060: #7f94b0;
+  --c-n-064: #94a3b8;
+  --c-n-064-a08-bg: rgba(148, 163, 184, 0.08);
+  --c-n-064-a10-bg: rgba(148, 163, 184, 0.1);
+  --c-n-064-a10-ln: rgba(145, 167, 196, 0.1);
+  --c-n-064-a12-bg: rgba(148, 163, 184, 0.11);
+  --c-n-064-a12-ln: rgba(148, 163, 184, 0.12);
+  --c-n-064-a14-bg: rgba(142, 166, 194, 0.14);
+  --c-n-064-a14-ln: rgba(148, 163, 184, 0.14);
+  --c-n-064-a16-bg: rgba(148, 163, 184, 0.16);
+  --c-n-064-a16-ln: rgba(148, 163, 184, 0.16);
+  --c-n-064-a18-bg: rgba(148, 163, 184, 0.18);
+  --c-n-064-a18-fg: rgba(148, 163, 184, 0.18);
+  --c-n-064-a18-ln: rgba(148, 163, 184, 0.18);
+  --c-n-064-a20-ln: rgba(148, 163, 184, 0.2);
+  --c-n-064-a22-ln: rgba(148, 163, 184, 0.22);
+  --c-n-064-a24-ln: rgba(148, 163, 184, 0.24);
+  --c-n-064-a26-ln: rgba(148, 163, 184, 0.26);
+  --c-n-064-a28-ln: rgba(148, 163, 184, 0.28);
+  --c-n-064-a32-ln: rgba(142, 166, 194, 0.32);
+  --c-n-064-a34-ln: rgba(148, 163, 184, 0.34);
+  --c-n-064-a36-ln: rgba(148, 163, 184, 0.35);
+  --c-n-064-a38-bg: rgba(142, 166, 194, 0.38);
+  --c-n-064-a40-fg: rgba(148, 163, 184, 0.4);
+  --c-n-064-a44-fg: rgba(148, 163, 184, 0.45);
+  --c-n-064-a48-ln: rgba(148, 163, 184, 0.48);
+  --c-n-064-a50-bg: rgba(148, 163, 184, 0.5);
+  --c-n-064-a56-bg: rgba(148, 163, 184, 0.55);
+  --c-n-064-a56-fg: rgba(148, 163, 184, 0.55);
+  --c-n-064-a56-ln: rgba(148, 163, 184, 0.55);
+  --c-n-064-a90-ln: rgba(148, 163, 184, 0.9);
+  --c-n-064-a96-ln: rgba(148, 163, 184, 0.95);
+  --c-n-064-fill: #94a3b8;
+  --c-n-064-ink: #94a3b8;
+  --c-n-068: #93a8c3;
+  --c-n-072: #9fb0c8;
+  --c-n-072-a08-bg: rgba(159, 176, 200, 0.08);
+  --c-n-072-a10-bg: rgba(159, 179, 204, 0.1);
+  --c-n-072-a14-bg: rgba(159, 176, 200, 0.14);
+  --c-n-072-a16-ln: rgba(159, 176, 200, 0.16);
+  --c-n-072-a26-ln: rgba(159, 179, 204, 0.26);
+  --c-n-072-a30-ln: rgba(159, 176, 200, 0.3);
+  --c-n-072-a64-fg: rgba(159, 176, 200, 0.65);
+  --c-n-080: #b9c8da;
+  --c-n-080-a36-fg: rgba(190, 208, 229, 0.36);
+  --c-n-080-a38-fg: rgba(190, 208, 229, 0.38);
+  --c-n-080-a42-fg: rgba(190, 208, 229, 0.42);
+  --c-n-080-a76-bg: rgba(203, 213, 225, 0.75);
+  --c-n-080-a96-ln: rgba(203, 213, 225, 0.95);
+  --c-n-084: #cbd5e1;
+  --c-n-084-fill: #cbd5e1;
+  --c-n-088: #d7e3f2;
+  --c-n-088-a76-fg: rgba(226, 232, 240, 0.75);
+  --c-n-088-a78-fg: rgba(226, 232, 240, 0.78);
+  --c-n-088-a82-fg: rgba(226, 232, 240, 0.82);
+  --c-n-088-a84-ln: rgba(226, 232, 240, 0.85);
+  --c-n-088-a90-ln: rgba(226, 232, 240, 0.9);
+  --c-n-088-a96-ln: rgba(226, 232, 240, 0.95);
+  --c-n-092: #e2e8f0;
+  --c-n-096: #f1f5f9;
+  --c-n-096-a02-ln: rgba(255, 255, 255, 0.025);
+  --c-n-096-a04-bg: rgba(255, 255, 255, 0.04);
+  --c-n-096-a04-ln: rgba(255, 255, 255, 0.035);
+  --c-n-096-a06-bg: rgba(255, 255, 255, 0.06);
+  --c-n-096-a06-ln: rgba(255, 255, 255, 0.06);
+  --c-n-096-a08-bg: rgba(255, 255, 255, 0.08);
+  --c-n-096-a08-ln: rgba(255, 255, 255, 0.08);
+  --c-n-096-a10-bg: rgba(255, 255, 255, 0.1);
+  --c-n-096-a12-bg: rgba(255, 255, 255, 0.12);
+  --c-n-096-a12-ln: rgba(255, 255, 255, 0.12);
+  --c-n-096-a20-ln: rgba(255, 255, 255, 0.2);
+  --c-n-096-a78-bg: rgba(248, 250, 252, 0.78);
+  --c-n-096-a88-bg: rgba(248, 250, 252, 0.88);
+  --c-n-096-a92-bg: rgba(255, 255, 255, 0.92);
+  --c-n-096-a92-ln: rgba(248, 250, 252, 0.92);
+  --c-n-096-a96-bg: rgba(255, 255, 255, 0.96);
+  --c-n-096-a96-fg: rgba(241, 245, 249, 0.95);
+  --c-n-096-a96-ln: rgba(255, 255, 255, 0.96);
+  --c-n-096-a98-bg: rgba(255, 255, 255, 0.98);
+  --c-n-096-fill: #f4f5f7;
+  --c-n-100: #f8fafc;
+  --c-n-100-fill: #ffffff;
+  --c-p-032-a44-bg: rgba(88, 28, 135, 0.45);
+  --c-p-040-a32-bg: rgba(190, 24, 93, 0.32);
+  --c-p-040-a48-bg: rgba(190, 24, 93, 0.48);
+  --c-p-040-a62-bg: rgba(107, 33, 168, 0.62);
+  --c-p-040-fill: #6b21a8;
+  --c-p-064: #a855f7;
+  --c-p-064-a12-bg: rgba(168, 85, 247, 0.12);
+  --c-p-064-a22-ln: rgba(168, 85, 247, 0.22);
+  --c-p-064-a32-bg: rgba(168, 85, 247, 0.32);
+  --c-p-064-a36-ln: rgba(168, 85, 247, 0.35);
+  --c-p-064-a40-bg: rgba(168, 85, 247, 0.4);
+  --c-p-064-fill: #a855f7;
+  --c-p-072-a48-ln: rgba(192, 132, 252, 0.48);
+  --c-p-088-a44-ln: rgba(216, 180, 254, 0.45);
+  --c-p-092: #f5d0fe;
+  --c-r-016-a20-bg: rgba(69, 10, 10, 0.2);
+  --c-r-016-a72-bg: rgba(76, 12, 22, 0.72);
+  --c-r-016-a94-bg: rgba(76, 12, 22, 0.94);
+  --c-r-016-a96-bg: rgba(55, 18, 27, 0.97);
+  --c-r-024-a12-bg: rgba(124, 45, 18, 0.12);
+  --c-r-024-a16-bg: rgba(124, 45, 18, 0.16);
+  --c-r-024-a38-bg: rgba(124, 45, 18, 0.38);
+  --c-r-024-a42-bg: rgba(124, 45, 18, 0.42);
+  --c-r-028: #7c2d12;
+  --c-r-032-a12-bg: rgba(127, 29, 29, 0.12);
+  --c-r-032-a14-bg: rgba(159, 18, 57, 0.14);
+  --c-r-032-a16-bg: rgba(153, 27, 27, 0.16);
+  --c-r-032-a18-bg: rgba(127, 29, 29, 0.18);
+  --c-r-032-a20-bg: rgba(127, 29, 29, 0.2);
+  --c-r-032-a22-bg: rgba(127, 29, 29, 0.22);
+  --c-r-032-a28-bg: rgba(127, 29, 29, 0.28);
+  --c-r-032-a30-bg: rgba(127, 29, 29, 0.3);
+  --c-r-032-a36-bg: rgba(127, 29, 29, 0.35);
+  --c-r-032-a38-bg: rgba(127, 29, 29, 0.38);
+  --c-r-032-a42-bg: rgba(127, 29, 29, 0.42);
+  --c-r-032-a44-bg: rgba(127, 29, 29, 0.45);
+  --c-r-032-a56-bg: rgba(153, 27, 27, 0.55);
+  --c-r-032-a70-bg: rgba(154, 52, 18, 0.7);
+  --c-r-032-fill: #7f1d1d;
+  --c-r-036-fill: #991b1b;
+  --c-r-036-ink: #991b1b;
+  --c-r-040-a04-bg: rgba(179, 38, 30, 0.05);
+  --c-r-040-a08-bg: rgba(179, 38, 30, 0.08);
+  --c-r-040-a44-ln: rgba(179, 38, 30, 0.45);
+  --c-r-040-a92-ln: rgba(190, 24, 50, 0.92);
+  --c-r-040-ink: #b3261e;
+  --c-r-048-a10-bg: rgba(220, 38, 38, 0.1);
+  --c-r-048-a18-ln: rgba(220, 38, 38, 0.18);
+  --c-r-048-a34-bg: rgba(220, 38, 38, 0.34);
+  --c-r-048-a56-ln: rgba(220, 38, 38, 0.55);
+  --c-r-052: #dc2626;
+  --c-r-056-a16-bg: rgba(220, 70, 70, 0.16);
+  --c-r-056-a44-ln: rgba(220, 70, 70, 0.45);
+  --c-r-060: #ef4444;
+  --c-r-060-fill: #ef4444;
+  --c-r-064-a08-bg: rgba(239, 68, 68, 0.08);
+  --c-r-064-a10-ln: rgba(239, 68, 68, 0.1);
+  --c-r-064-a12-bg: rgba(239, 68, 68, 0.13);
+  --c-r-064-a14-bg: rgba(239, 68, 68, 0.14);
+  --c-r-064-a16-bg: rgba(239, 68, 68, 0.16);
+  --c-r-064-a18-bg: rgba(239, 68, 68, 0.18);
+  --c-r-064-a20-bg: rgba(239, 68, 68, 0.2);
+  --c-r-064-a22-bg: rgba(239, 68, 68, 0.22);
+  --c-r-064-a22-ln: rgba(239, 68, 68, 0.22);
+  --c-r-064-a26-bg: rgba(239, 68, 68, 0.26);
+  --c-r-064-a28-ln: rgba(239, 68, 68, 0.28);
+  --c-r-064-a32-ln: rgba(239, 68, 68, 0.32);
+  --c-r-064-a36-ln: rgba(239, 68, 68, 0.35);
+  --c-r-064-a42-ln: rgba(239, 68, 68, 0.42);
+  --c-r-064-a50-ln: rgba(239, 68, 68, 0.5);
+  --c-r-064-a88-fill: rgba(239, 68, 68, 0.88);
+  --c-r-072: #f87171;
+  --c-r-072-a12-ln: rgba(248, 113, 113, 0.12);
+  --c-r-072-a16-bg: rgba(248, 113, 113, 0.16);
+  --c-r-072-a16-ln: rgba(248, 113, 113, 0.16);
+  --c-r-072-a20-ln: rgba(248, 113, 113, 0.2);
+  --c-r-072-a22-ln: rgba(248, 113, 113, 0.22);
+  --c-r-072-a24-ln: rgba(248, 113, 113, 0.24);
+  --c-r-072-a28-ln: rgba(248, 113, 113, 0.28);
+  --c-r-072-a30-ln: rgba(248, 113, 113, 0.3);
+  --c-r-072-a32-ln: rgba(251, 113, 133, 0.32);
+  --c-r-072-a34-ln: rgba(248, 113, 113, 0.34);
+  --c-r-072-a36-ln: rgba(248, 113, 113, 0.36);
+  --c-r-072-a38-ln: rgba(248, 113, 113, 0.38);
+  --c-r-072-a40-ln: rgba(248, 113, 113, 0.4);
+  --c-r-072-a42-ln: rgba(248, 113, 113, 0.42);
+  --c-r-072-a44-ln: rgba(248, 113, 113, 0.45);
+  --c-r-072-a46-ln: rgba(248, 113, 113, 0.46);
+  --c-r-072-a48-ln: rgba(248, 113, 113, 0.48);
+  --c-r-072-a50-ln: rgba(251, 113, 133, 0.5);
+  --c-r-072-a52-ln: rgba(248, 113, 113, 0.52);
+  --c-r-072-a58-ln: rgba(248, 113, 113, 0.58);
+  --c-r-072-a62-ln: rgba(248, 113, 113, 0.62);
+  --c-r-072-a68-ln: rgba(248, 113, 113, 0.68);
+  --c-r-072-a72-ln: rgba(248, 113, 113, 0.72);
+  --c-r-072-fill: #fb7185;
+  --c-r-080: #fca5a5;
+  --c-r-088: #fecaca;
+  --c-r-096: #fee2e2;
+  --c-r-096-a96-bg: rgba(254, 226, 226, 0.95);
+  --c-y-076: #fde68a;
+  --c-a-032-a04-bg: rgba(138, 109, 31, 0.05);
+  --c-a-032-a06-bg: rgba(138, 109, 31, 0.06);
+  --c-a-032-a10-bg: rgba(138, 109, 31, 0.1);
+  --c-a-032-a20-bg: rgba(138, 109, 31, 0.2);
+  --c-a-032-a28-bg: rgba(138, 109, 31, 0.28);
+  --c-a-048-ink: #d0a52a;
+  --c-b-036: #2f6f8f;
+  --c-b-040-a20-bg: rgba(47, 111, 143, 0.2);
+  --c-b-040-a28-bg: rgba(47, 111, 143, 0.28);
+  --c-g-040-a20-bg: rgba(47, 143, 78, 0.2);
+  --c-n-048-a16-bg: rgba(128, 128, 128, 0.15);
+  --c-n-048-a18-bg: rgba(128, 128, 128, 0.18);
+  --c-n-048-a20-bg: rgba(109, 95, 143, 0.2);
+  --c-n-048-a22-ln: rgba(128, 128, 128, 0.22);
+  --c-r-048: #b23b3b;
+  --c-r-048-a12-bg: rgba(178, 59, 59, 0.12);
+  --c-r-048-a20-bg: rgba(178, 59, 59, 0.2);
+  /* --- I passi che la scheda prodotto Pratesi ha aggiunto ---
+   * Prodotti da `palette.classify()`, non scelti a mano: sono i tre
+   * letterali della tappa 1 che non cadevano su nessun passo gia'
+   * presente. Il valore scuro e' quello che il foglio aveva gia' —
+   * il tema scuro non cambia aspetto — e il valore chiaro esce dalla
+   * curva della famiglia. */
+  --c-b-040-ink: #1b5fa8;
+  /* --- Il passo che il calendario R1 dello Scadenziario ha aggiunto ---
+   * Prodotto da `codemod.transform()` sul foglio dello Scadenziario,
+   * non scelto a mano: `.scad-cal-cell.is-out:hover` e' l'unica
+   * velatura del calendario che non cadesse su un passo gia'
+   * presente. Il valore scuro e' quello che il foglio aveva gia'. */
+  --c-b-056-a04-bg: rgba(18, 135, 255, 0.05);
+  --c-b-056-a06-bg: rgba(47, 111, 235, 0.06);
+  --c-n-048-a80-fg: rgba(128, 128, 128, 0.8);
+}
+
+/* Il tema chiaro. Il selettore e' `:root[data-ares-theme="light"]`
+ * perche' l'attributo lo scrive il **server** sul primo byte di HTML,
+ * come fa gia' per la modalita' della barra. Nessun `@media
+ * prefers-color-scheme` da solo: la scelta esplicita di una persona deve
+ * vincere sulla preferenza di sistema, e sotto c'e' comunque un
+ * ripiegamento per chi non ha ancora scelto. */
+:root[data-ares-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f4f6fa;
+  --surface: #ffffff;
+  --surface-elevated: #ffffff;
+  --text: #16202f;
+  --text-muted: #5a6473;
+  --border: rgba(15, 23, 42, 0.14);
+  --border-strong: rgba(15, 23, 42, 0.26);
+  --accent: #1d5bd6;
+  --accent-text: #0b3fa8;
+  --accent-contrast: #ffffff;
+  --danger: #b01212;
+  --danger-text: #9b1010;
+  --warning: #a35a02;
+  --warning-text: #7c4503;
+  --success: #12784a;
+  --success-text: #0d5f3a;
+  --input-bg: #ffffff;
+  --input-border: rgba(15, 23, 42, 0.24);
+  --input-placeholder: #667081;
+  --overlay: rgba(15, 23, 42, 0.44);
+  --focus-ring: #1d5bd6;
+
+  /* La scala delle superfici al CHIARO. Non e' l'inversa aritmetica
+   * dello scuro: al chiaro la profondita' si legge come una velatura
+   * grigia sempre piu' densa sul bianco, non come un nero sempre piu'
+   * fondo. I veli restano traslucidi con la stessa gradazione, cosi' la
+   * stratificazione dei moduli si conserva. */
+  --sup-fondo: #eef1f7;
+  --sup-1: #ffffff;
+  --sup-2: #ffffff;
+  --sup-3: #eef2f8;
+
+  --velo-fondo-basso: rgba(15, 23, 42, 0.03);
+  --velo-fondo-medio: rgba(15, 23, 42, 0.05);
+  --velo-fondo-alto: rgba(15, 23, 42, 0.08);
+  --velo-1-basso: rgba(15, 23, 42, 0.03);
+  --velo-1-medio: rgba(15, 23, 42, 0.05);
+  --velo-1-alto: rgba(255, 255, 255, 0.96);
+  --velo-2-basso: rgba(15, 23, 42, 0.04);
+  --velo-2-medio: rgba(15, 23, 42, 0.06);
+  --velo-2-alto: rgba(255, 255, 255, 0.98);
+  --velo-3-basso: rgba(15, 23, 42, 0.05);
+  --velo-3-medio: rgba(15, 23, 42, 0.08);
+  --velo-3-alto: rgba(15, 23, 42, 0.11);
+
+  --ombra-bassa: rgba(15, 23, 42, 0.08);
+  --ombra-media: rgba(15, 23, 42, 0.14);
+  --ombra-alta: rgba(15, 23, 42, 0.20);
+  /* La scala categoriale: il passo per fondo CHIARO della stessa palette
+   * di riferimento. Solo il porpora cambia valore rispetto allo scuro —
+   * vermiglio e verde-blu reggono tutti e due i fondi cosi' come sono, e
+   * fingere una differenza li peggiorerebbe soltanto. */
+  --chart-cat-1: var(--c-b-056);
+  --chart-cat-2: #d55e00;
+  --chart-cat-3: #009e73;
+  --chart-cat-4: #c66a9d;
+
+  /* Gli stati al chiaro sono ESATTAMENTE `--success`, `--warning` e
+   * `--danger` di questo stesso blocco: un modulo non ha una propria
+   * idea di «errore». Al buio restano invece i tre valori storici del
+   * modulo, che sono piu' chiari dei semantici: `--danger` scuro sta a
+   * 4.06:1, e questi tre colori fanno anche da TESTO in una pastiglia di
+   * 11px, dove 4.06 non basta. */
+  --chart-ok: #12784a;
+  --chart-attention: #a35a02;
+  --chart-critical: #b01212;
+
+  --shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.10);
+  --shadow-strong: 0 20px 48px rgba(15, 23, 42, 0.16);
+
+  --ares-purple: #6d38d6;
+
+  /* --- La tavolozza: valori chiari --- */
+  --c-a-024-a12-bg: rgba(232, 146, 48, 0.054);
+  --c-a-024-a18-bg: rgba(232, 146, 48, 0.081);
+  --c-a-024-a20-bg: rgba(232, 146, 48, 0.09);
+  --c-a-024-a28-bg: rgba(232, 146, 48, 0.126);
+  --c-a-032: #edbc84;
+  --c-a-032-ink: #a1560a;
+  --c-a-036-fill: #b45309;
+  --c-a-040: #ebb170;
+  --c-a-040-a12-bg: rgba(232, 146, 48, 0.054);
+  --c-a-040-a16-bg: rgba(232, 146, 48, 0.072);
+  --c-a-040-a22-bg: rgba(232, 146, 48, 0.099);
+  --c-a-040-a24-bg: rgba(232, 146, 48, 0.108);
+  --c-a-040-a92-ln: rgba(193, 118, 31, 0.6624);
+  --c-a-048: #d67200;
+  --c-a-048-a08-bg: rgba(232, 146, 48, 0.036);
+  --c-a-048-a10-bg: rgba(232, 146, 48, 0.045);
+  --c-a-048-a12-bg: rgba(232, 146, 48, 0.054);
+  --c-a-048-a14-ln: rgba(193, 118, 31, 0.1008);
+  --c-a-048-a16-bg: rgba(232, 146, 48, 0.072);
+  --c-a-048-a18-bg: rgba(232, 146, 48, 0.081);
+  --c-a-048-a22-bg: rgba(232, 146, 48, 0.099);
+  --c-a-048-a22-ln: rgba(193, 118, 31, 0.1584);
+  --c-a-048-a28-bg: rgba(232, 146, 48, 0.126);
+  --c-a-048-a34-ln: rgba(193, 118, 31, 0.2448);
+  --c-a-048-a36-ln: rgba(193, 118, 31, 0.2592);
+  --c-a-048-a44-ln: rgba(193, 118, 31, 0.3168);
+  --c-a-048-a50-ln: rgba(193, 118, 31, 0.36);
+  --c-a-048-a56-ln: rgba(193, 118, 31, 0.4032);
+  --c-a-052: #e17d09;
+  --c-a-052-fill: #facc15;
+  --c-a-052-ink: #d8952a;
+  --c-a-056: #d97504;
+  --c-a-056-a06-bg: rgba(232, 146, 48, 0.027);
+  --c-a-056-a14-bg: rgba(232, 146, 48, 0.063);
+  --c-a-056-a16-bg: rgba(232, 146, 48, 0.072);
+  --c-a-056-a16-ln: rgba(193, 118, 31, 0.1152);
+  --c-a-056-a18-bg: rgba(232, 146, 48, 0.081);
+  --c-a-056-a18-ln: rgba(193, 118, 31, 0.1296);
+  --c-a-056-a20-bg: rgba(232, 146, 48, 0.09);
+  --c-a-056-a22-ln: rgba(193, 118, 31, 0.1584);
+  --c-a-056-a28-ln: rgba(193, 118, 31, 0.2016);
+  --c-a-056-a30-ln: rgba(193, 118, 31, 0.216);
+  --c-a-056-a32-ln: rgba(193, 118, 31, 0.2304);
+  --c-a-056-a34-ln: rgba(193, 118, 31, 0.2448);
+  --c-a-056-a36-ln: rgba(193, 118, 31, 0.2592);
+  --c-a-056-a38-ln: rgba(193, 118, 31, 0.2736);
+  --c-a-056-a40-ln: rgba(193, 118, 31, 0.288);
+  --c-a-056-a42-ln: rgba(193, 118, 31, 0.3024);
+  --c-a-056-a46-ln: rgba(193, 118, 31, 0.3312);
+  --c-a-056-a50-ln: rgba(193, 118, 31, 0.36);
+  --c-a-056-a60-ln: rgba(193, 118, 31, 0.432);
+  --c-a-056-a70-ln: rgba(193, 118, 31, 0.504);
+  --c-a-056-a76-bg: rgba(232, 146, 48, 0.342);
+  --c-a-056-fill: #fbbf24;
+  --c-a-060: #cc6f04;
+  --c-a-064: #c06803;
+  --c-a-064-a12-ln: rgba(193, 118, 31, 0.0864);
+  --c-a-064-a26-ln: rgba(193, 118, 31, 0.1872);
+  --c-a-064-a28-ln: rgba(193, 118, 31, 0.2016);
+  --c-a-064-a38-ln: rgba(193, 118, 31, 0.2736);
+  --c-a-064-a40-ln: rgba(193, 118, 31, 0.288);
+  --c-a-064-a42-ln: rgba(193, 118, 31, 0.3024);
+  --c-a-064-a62-ln: rgba(193, 118, 31, 0.4464);
+  --c-a-072: #a85b02;
+  --c-a-076: #72512b;
+  --c-a-080: #6f4b22;
+  --c-a-084: #834602;
+  --c-a-088: #754002;
+  --c-a-096: #5e3200;
+  --c-b-016-a10-bg: rgba(48, 113, 232, 0.045);
+  --c-b-016-a42-bg: rgba(48, 113, 232, 0.189);
+  --c-b-016-a46-bg: rgba(48, 113, 232, 0.207);
+  --c-b-016-a54-bg: rgba(48, 113, 232, 0.243);
+  --c-b-016-a66-bg: rgba(48, 113, 232, 0.297);
+  --c-b-016-a72-bg: rgba(48, 113, 232, 0.324);
+  --c-b-016-a74-bg: rgba(48, 113, 232, 0.333);
+  --c-b-016-a78-bg: rgba(48, 113, 232, 0.351);
+  --c-b-016-a90-bg: rgba(48, 113, 232, 0.405);
+  --c-b-016-a92-bg: rgba(48, 113, 232, 0.414);
+  --c-b-016-a96-bg: rgba(48, 113, 232, 0.432);
+  --c-b-020: #a9c0ea;
+  --c-b-024: #a6bbe2;
+  --c-b-024-a92-bg: rgba(48, 113, 232, 0.414);
+  --c-b-024-a96-fill: rgba(24, 54, 89, 0.96);
+  --c-b-024-a98-bg: rgba(48, 113, 232, 0.441);
+  --c-b-028: #8eb0ef;
+  --c-b-028-fill: #173f75;
+  --c-b-032: #84a9ed;
+  --c-b-032-a10-bg: rgba(48, 113, 232, 0.045);
+  --c-b-032-a16-bg: rgba(48, 113, 232, 0.072);
+  --c-b-032-a98-bg: rgba(48, 113, 232, 0.441);
+  --c-b-036-fill: #4c1d95;
+  --c-b-040-a14-bg: rgba(48, 113, 232, 0.063);
+  --c-b-040-a16-bg: rgba(48, 113, 232, 0.072);
+  --c-b-040-a18-bg: rgba(48, 113, 232, 0.081);
+  --c-b-040-a22-bg: rgba(48, 113, 232, 0.099);
+  --c-b-040-a24-bg: rgba(48, 113, 232, 0.108);
+  --c-b-040-a32-bg: rgba(48, 113, 232, 0.144);
+  --c-b-040-a34-bg: rgba(48, 113, 232, 0.153);
+  --c-b-040-a42-bg: rgba(48, 113, 232, 0.189);
+  --c-b-040-fill: #0284c7;
+  --c-b-048: #1953bd;
+  --c-b-048-a08-bg: rgba(48, 113, 232, 0.036);
+  --c-b-048-a10-bg: rgba(48, 113, 232, 0.045);
+  --c-b-048-a12-bg: rgba(48, 113, 232, 0.054);
+  --c-b-048-a14-bg: rgba(48, 113, 232, 0.063);
+  --c-b-048-a16-bg: rgba(48, 113, 232, 0.072);
+  --c-b-048-a22-ln: rgba(31, 88, 193, 0.1584);
+  --c-b-048-a24-bg: rgba(48, 113, 232, 0.108);
+  --c-b-048-a24-ln: rgba(31, 88, 193, 0.1728);
+  --c-b-048-a28-bg: rgba(48, 113, 232, 0.126);
+  --c-b-048-a34-ln: rgba(31, 88, 193, 0.2448);
+  --c-b-048-a36-ln: rgba(31, 88, 193, 0.2592);
+  --c-b-048-a38-bg: rgba(48, 113, 232, 0.171);
+  --c-b-048-a44-ln: rgba(31, 88, 193, 0.3168);
+  --c-b-048-a70-bg: rgba(48, 113, 232, 0.315);
+  --c-b-048-a76-bg: rgba(48, 113, 232, 0.342);
+  --c-b-048-a88-fill: rgba(14, 165, 233, 0.88);
+  --c-b-048-a92-fill: rgba(29, 78, 216, 0.92);
+  --c-b-048-a96-fill: rgba(14, 165, 233, 0.96);
+  --c-b-048-fill: #1d4ed8;
+  --c-b-048-ink: #1d4ed8;
+  --c-b-052: #0052eb;
+  --c-b-052-fill: #2563eb;
+  --c-b-056: #1353c9;
+  --c-b-056-a04-ln: rgba(31, 88, 193, 0.0288);
+  --c-b-056-a06-ln: rgba(31, 88, 193, 0.0432);
+  --c-b-056-a08-bg: rgba(48, 113, 232, 0.036);
+  --c-b-056-a08-ln: rgba(31, 88, 193, 0.0576);
+  --c-b-056-a10-bg: rgba(48, 113, 232, 0.045);
+  --c-b-056-a10-ln: rgba(31, 88, 193, 0.072);
+  --c-b-056-a12-bg: rgba(48, 113, 232, 0.054);
+  --c-b-056-a12-ln: rgba(31, 88, 193, 0.0864);
+  --c-b-056-a14-bg: rgba(48, 113, 232, 0.063);
+  --c-b-056-a14-ln: rgba(31, 88, 193, 0.1008);
+  --c-b-056-a16-bg: rgba(48, 113, 232, 0.072);
+  --c-b-056-a16-ln: rgba(31, 88, 193, 0.1152);
+  --c-b-056-a18-bg: rgba(48, 113, 232, 0.081);
+  --c-b-056-a18-ln: rgba(31, 88, 193, 0.1296);
+  --c-b-056-a20-bg: rgba(48, 113, 232, 0.09);
+  --c-b-056-a20-ln: rgba(31, 88, 193, 0.144);
+  --c-b-056-a22-bg: rgba(48, 113, 232, 0.099);
+  --c-b-056-a22-ln: rgba(31, 88, 193, 0.1584);
+  --c-b-056-a24-bg: rgba(48, 113, 232, 0.108);
+  --c-b-056-a24-ln: rgba(31, 88, 193, 0.1728);
+  --c-b-056-a26-bg: rgba(48, 113, 232, 0.117);
+  --c-b-056-a26-ln: rgba(31, 88, 193, 0.1872);
+  --c-b-056-a28-bg: rgba(48, 113, 232, 0.126);
+  --c-b-056-a28-ln: rgba(31, 88, 193, 0.2016);
+  --c-b-056-a30-bg: rgba(48, 113, 232, 0.135);
+  --c-b-056-a32-bg: rgba(48, 113, 232, 0.144);
+  --c-b-056-a32-ln: rgba(31, 88, 193, 0.2304);
+  --c-b-056-a34-bg: rgba(48, 113, 232, 0.153);
+  --c-b-056-a34-ln: rgba(31, 88, 193, 0.2448);
+  --c-b-056-a36-bg: rgba(48, 113, 232, 0.162);
+  --c-b-056-a36-ln: rgba(31, 88, 193, 0.2592);
+  --c-b-056-a38-ln: rgba(31, 88, 193, 0.2736);
+  --c-b-056-a40-ln: rgba(31, 88, 193, 0.288);
+  --c-b-056-a42-ln: rgba(31, 88, 193, 0.3024);
+  --c-b-056-a44-ln: rgba(31, 88, 193, 0.3168);
+  --c-b-056-a46-ln: rgba(31, 88, 193, 0.3312);
+  --c-b-056-a48-ln: rgba(31, 88, 193, 0.3456);
+  --c-b-056-a56-ln: rgba(31, 88, 193, 0.4032);
+  --c-b-056-a58-bg: rgba(48, 113, 232, 0.261);
+  --c-b-056-a64-ln: rgba(31, 88, 193, 0.4608);
+  --c-b-056-a72-bg: rgba(48, 113, 232, 0.324);
+  --c-b-056-a72-ln: rgba(31, 88, 193, 0.5184);
+  --c-b-056-a76-ln: rgba(31, 88, 193, 0.5472);
+  --c-b-056-a78-bg: rgba(48, 113, 232, 0.351);
+  --c-b-056-a84-bg: rgba(48, 113, 232, 0.378);
+  --c-b-056-a88-ln: rgba(31, 88, 193, 0.6336);
+  --c-b-056-a90-fill: rgba(37, 99, 235, 0.9);
+  --c-b-056-a90-ln: rgba(31, 88, 193, 0.648);
+  --c-b-056-a92-fill: rgba(37, 99, 235, 0.92);
+  --c-b-056-a92-ln: rgba(31, 88, 193, 0.6624);
+  --c-b-056-a96-fill: rgba(37, 99, 235, 0.96);
+  --c-b-056-a96-ln: rgba(31, 88, 193, 0.6912);
+  --c-b-056-fill: #2f6fe8;
+  --c-b-056-ink: #2f6feb;
+  --c-b-060: #094cc7;
+  --c-b-060-fill: #38bdf8;
+  --c-b-064: #0044c3;
+  --c-b-064-a04-bg: rgba(48, 113, 232, 0.018);
+  --c-b-064-a06-bg: rgba(48, 113, 232, 0.027);
+  --c-b-064-a08-bg: rgba(48, 113, 232, 0.036);
+  --c-b-064-a10-bg: rgba(48, 113, 232, 0.045);
+  --c-b-064-a10-ln: rgba(31, 88, 193, 0.072);
+  --c-b-064-a12-bg: rgba(48, 113, 232, 0.054);
+  --c-b-064-a12-ln: rgba(31, 88, 193, 0.0864);
+  --c-b-064-a14-bg: rgba(48, 113, 232, 0.063);
+  --c-b-064-a14-ln: rgba(31, 88, 193, 0.1008);
+  --c-b-064-a16-bg: rgba(48, 113, 232, 0.072);
+  --c-b-064-a16-ln: rgba(31, 88, 193, 0.1152);
+  --c-b-064-a18-bg: rgba(48, 113, 232, 0.081);
+  --c-b-064-a18-ln: rgba(31, 88, 193, 0.1296);
+  --c-b-064-a20-ln: rgba(31, 88, 193, 0.144);
+  --c-b-064-a22-ln: rgba(31, 88, 193, 0.1584);
+  --c-b-064-a24-ln: rgba(31, 88, 193, 0.1728);
+  --c-b-064-a26-ln: rgba(31, 88, 193, 0.1872);
+  --c-b-064-a28-ln: rgba(31, 88, 193, 0.2016);
+  --c-b-064-a30-ln: rgba(31, 88, 193, 0.216);
+  --c-b-064-a32-ln: rgba(31, 88, 193, 0.2304);
+  --c-b-064-a34-bg: rgba(48, 113, 232, 0.153);
+  --c-b-064-a34-ln: rgba(31, 88, 193, 0.2448);
+  --c-b-064-a36-ln: rgba(31, 88, 193, 0.2592);
+  --c-b-064-a38-ln: rgba(31, 88, 193, 0.2736);
+  --c-b-064-a40-ln: rgba(31, 88, 193, 0.288);
+  --c-b-064-a42-ln: rgba(31, 88, 193, 0.3024);
+  --c-b-064-a44-ln: rgba(31, 88, 193, 0.3168);
+  --c-b-064-a46-ln: rgba(31, 88, 193, 0.3312);
+  --c-b-064-a48-ln: rgba(31, 88, 193, 0.3456);
+  --c-b-064-a50-bg: rgba(48, 113, 232, 0.225);
+  --c-b-064-a50-ln: rgba(31, 88, 193, 0.36);
+  --c-b-064-a52-ln: rgba(31, 88, 193, 0.3744);
+  --c-b-064-a54-ln: rgba(31, 88, 193, 0.3888);
+  --c-b-064-a56-ln: rgba(31, 88, 193, 0.4032);
+  --c-b-064-a58-ln: rgba(31, 88, 193, 0.4176);
+  --c-b-064-a60-ln: rgba(31, 88, 193, 0.432);
+  --c-b-064-a62-ln: rgba(31, 88, 193, 0.4464);
+  --c-b-064-a66-ln: rgba(31, 88, 193, 0.4752);
+  --c-b-064-a68-ln: rgba(31, 88, 193, 0.4896);
+  --c-b-064-a70-ln: rgba(31, 88, 193, 0.504);
+  --c-b-064-a72-ln: rgba(31, 88, 193, 0.5184);
+  --c-b-064-a76-bg: rgba(48, 113, 232, 0.342);
+  --c-b-064-a84-ln: rgba(31, 88, 193, 0.6048);
+  --c-b-064-a96-fill: rgba(99, 102, 241, 0.95);
+  --c-b-064-fill: #4a7dff;
+  --c-b-068: #0a43ad;
+  --c-b-068-fill: #60a5fa;
+  --c-b-072: #093ea1;
+  --c-b-072-a64-ln: rgba(31, 88, 193, 0.4608);
+  --c-b-076: #00379d;
+  --c-b-076-fill: #a78bfa;
+  --c-b-080: #03338e;
+  --c-b-080-a34-ln: rgba(31, 88, 193, 0.2448);
+  --c-b-080-a38-ln: rgba(31, 88, 193, 0.2736);
+  --c-b-080-a42-ln: rgba(31, 88, 193, 0.3024);
+  --c-b-080-a44-ln: rgba(31, 88, 193, 0.3168);
+  --c-b-080-a48-ln: rgba(31, 88, 193, 0.3456);
+  --c-b-080-a52-ln: rgba(31, 88, 193, 0.3744);
+  --c-b-080-a58-ln: rgba(31, 88, 193, 0.4176);
+  --c-b-080-a74-ln: rgba(31, 88, 193, 0.5328);
+  --c-b-084: #032f81;
+  --c-b-088: #022a76;
+  --c-c-008-a54-bg: rgba(48, 198, 232, 0.243);
+  --c-c-020: #a4e1ef;
+  --c-c-040: #70d4eb;
+  --c-c-040-a86-fill: rgba(6, 182, 212, 0.86);
+  --c-c-044: #059bbc;
+  --c-c-044-fill: #06b6d4;
+  --c-c-048-a46-ln: rgba(31, 163, 193, 0.3312);
+  --c-c-052: #11b5da;
+  --c-c-052-fill: #22d3ee;
+  --c-c-056-a16-bg: rgba(48, 198, 232, 0.072);
+  --c-c-056-a28-ln: rgba(31, 163, 193, 0.2016);
+  --c-c-068: #0791b0;
+  --c-g-008-a92-bg: rgba(48, 232, 116, 0.414);
+  --c-g-016: #abf3c5;
+  --c-g-016-a16-bg: rgba(48, 232, 116, 0.072);
+  --c-g-016-a20-bg: rgba(48, 232, 116, 0.09);
+  --c-g-016-a22-bg: rgba(48, 232, 116, 0.099);
+  --c-g-016-a28-bg: rgba(48, 232, 116, 0.126);
+  --c-g-024: #9eeaba;
+  --c-g-024-a14-bg: rgba(48, 232, 116, 0.063);
+  --c-g-024-a16-bg: rgba(48, 232, 116, 0.072);
+  --c-g-024-a18-bg: rgba(48, 232, 116, 0.081);
+  --c-g-024-a20-bg: rgba(48, 232, 116, 0.09);
+  --c-g-024-a22-bg: rgba(48, 232, 116, 0.099);
+  --c-g-024-a36-bg: rgba(48, 232, 116, 0.162);
+  --c-g-024-a72-bg: rgba(48, 232, 116, 0.324);
+  --c-g-032-a08-bg: rgba(48, 232, 116, 0.036);
+  --c-g-032-a20-bg: rgba(48, 232, 116, 0.09);
+  --c-g-032-a26-bg: rgba(48, 232, 116, 0.117);
+  --c-g-032-a52-bg: rgba(48, 232, 116, 0.234);
+  --c-g-032-ink: #1b7f4d;
+  --c-g-036: #7aeca4;
+  --c-g-040-a10-ln: rgba(31, 193, 91, 0.072);
+  --c-g-040-a12-bg: rgba(48, 232, 116, 0.054);
+  --c-g-040-a22-ln: rgba(31, 193, 91, 0.1584);
+  --c-g-040-a96-bg: rgba(48, 232, 116, 0.432);
+  --c-g-040-a96-ln: rgba(31, 193, 91, 0.6912);
+  --c-g-044: #1da54f;
+  --c-g-048: #1cba56;
+  --c-g-048-a08-bg: rgba(48, 232, 116, 0.036);
+  --c-g-048-a10-bg: rgba(48, 232, 116, 0.045);
+  --c-g-048-a12-bg: rgba(48, 232, 116, 0.054);
+  --c-g-048-a12-ln: rgba(31, 193, 91, 0.0864);
+  --c-g-048-a14-bg: rgba(48, 232, 116, 0.063);
+  --c-g-048-a16-bg: rgba(48, 232, 116, 0.072);
+  --c-g-048-a22-ln: rgba(31, 193, 91, 0.1584);
+  --c-g-048-a24-bg: rgba(48, 232, 116, 0.108);
+  --c-g-048-a24-ln: rgba(31, 193, 91, 0.1728);
+  --c-g-048-a26-bg: rgba(48, 232, 116, 0.117);
+  --c-g-048-a28-ln: rgba(31, 193, 91, 0.2016);
+  --c-g-048-a30-ln: rgba(31, 193, 91, 0.216);
+  --c-g-048-a32-ln: rgba(31, 193, 91, 0.2304);
+  --c-g-048-a34-bg: rgba(48, 232, 116, 0.153);
+  --c-g-048-a36-bg: rgba(48, 232, 116, 0.162);
+  --c-g-048-a36-ln: rgba(31, 193, 91, 0.2592);
+  --c-g-048-a42-bg: rgba(48, 232, 116, 0.189);
+  --c-g-048-a42-ln: rgba(31, 193, 91, 0.3024);
+  --c-g-048-a44-ln: rgba(31, 193, 91, 0.3168);
+  --c-g-048-a50-ln: rgba(31, 193, 91, 0.36);
+  --c-g-052: #2ac161;
+  --c-g-056-a08-bg: rgba(48, 232, 116, 0.036);
+  --c-g-056-a10-bg: rgba(48, 232, 116, 0.045);
+  --c-g-056-a10-ln: rgba(31, 193, 91, 0.072);
+  --c-g-056-a12-bg: rgba(48, 232, 116, 0.054);
+  --c-g-056-a12-ln: rgba(31, 193, 91, 0.0864);
+  --c-g-056-a16-ln: rgba(31, 193, 91, 0.1152);
+  --c-g-056-a20-ln: rgba(31, 193, 91, 0.144);
+  --c-g-056-a22-ln: rgba(31, 193, 91, 0.1584);
+  --c-g-056-a24-ln: rgba(31, 193, 91, 0.1728);
+  --c-g-056-a28-ln: rgba(31, 193, 91, 0.2016);
+  --c-g-056-a30-ln: rgba(31, 193, 91, 0.216);
+  --c-g-056-a32-ln: rgba(31, 193, 91, 0.2304);
+  --c-g-056-a34-ln: rgba(31, 193, 91, 0.2448);
+  --c-g-056-a36-ln: rgba(31, 193, 91, 0.2592);
+  --c-g-056-a38-ln: rgba(31, 193, 91, 0.2736);
+  --c-g-056-a40-ln: rgba(31, 193, 91, 0.288);
+  --c-g-056-a42-ln: rgba(31, 193, 91, 0.3024);
+  --c-g-056-a44-ln: rgba(31, 193, 91, 0.3168);
+  --c-g-056-a46-ln: rgba(31, 193, 91, 0.3312);
+  --c-g-056-a72-ln: rgba(31, 193, 91, 0.5184);
+  --c-g-060: #20b055;
+  --c-g-072: #149644;
+  --c-g-072-a42-fg: rgba(20, 143, 65, 0.42);
+  --c-g-080: #117f3a;
+  --c-g-080-fill: #a7f3d0;
+  --c-g-084: #0e7634;
+  --c-g-088: #096f2e;
+  --c-g-092-fill: #dcfce7;
+  --c-g-096: #095525;
+  --c-n-000: #f0f3f7;
+  --c-n-000-a08-ln: rgba(15, 23, 42, 0.04);
+  --c-n-000-a10-ln: rgba(15, 23, 42, 0.05);
+  --c-n-000-a12-ln: rgba(15, 23, 42, 0.06);
+  --c-n-000-a14-ln: rgba(15, 23, 42, 0.07);
+  --c-n-000-a16-bg: rgba(255, 255, 255, 0.462);
+  --c-n-000-a16-ln: rgba(15, 23, 42, 0.08);
+  --c-n-000-a18-ln: rgba(15, 23, 42, 0.09);
+  --c-n-000-a20-ln: rgba(15, 23, 42, 0.1);
+  --c-n-000-a22-ln: rgba(15, 23, 42, 0.11);
+  --c-n-000-a24-ln: rgba(15, 23, 42, 0.12);
+  --c-n-000-a26-ln: rgba(15, 23, 42, 0.13);
+  --c-n-000-a28-ln: rgba(15, 23, 42, 0.14);
+  --c-n-000-a30-ln: rgba(15, 23, 42, 0.15);
+  --c-n-000-a32-ln: rgba(15, 23, 42, 0.16);
+  --c-n-000-a34-ln: rgba(15, 23, 42, 0.17);
+  --c-n-000-a36-ln: rgba(15, 23, 42, 0.18);
+  --c-n-000-a38-ln: rgba(15, 23, 42, 0.19);
+  --c-n-000-a42-ln: rgba(15, 23, 42, 0.21);
+  --c-n-000-a44-ln: rgba(15, 23, 42, 0.22);
+  --c-n-000-a56-ln: rgba(15, 23, 42, 0.28);
+  --c-n-004: #f3f5f9;
+  --c-n-008: #f6f8fa;
+  --c-n-008-a04-bg: rgba(255, 255, 255, 0.378);
+  --c-n-008-a08-ln: rgba(15, 23, 42, 0.04);
+  --c-n-008-a18-bg: rgba(255, 255, 255, 0.476);
+  --c-n-008-a18-ln: rgba(15, 23, 42, 0.09);
+  --c-n-008-a20-bg: rgba(255, 255, 255, 0.49);
+  --c-n-008-a20-ln: rgba(15, 23, 42, 0.1);
+  --c-n-008-a22-ln: rgba(15, 23, 42, 0.11);
+  --c-n-008-a26-bg: rgba(255, 255, 255, 0.532);
+  --c-n-008-a28-bg: rgba(255, 255, 255, 0.546);
+  --c-n-008-a32-bg: rgba(255, 255, 255, 0.574);
+  --c-n-008-a34-bg: rgba(255, 255, 255, 0.588);
+  --c-n-008-a34-ln: rgba(15, 23, 42, 0.17);
+  --c-n-008-a36-bg: rgba(255, 255, 255, 0.602);
+  --c-n-008-a36-ln: rgba(15, 23, 42, 0.18);
+  --c-n-008-a38-bg: rgba(255, 255, 255, 0.616);
+  --c-n-008-a40-bg: rgba(255, 255, 255, 0.63);
+  --c-n-008-a42-bg: rgba(255, 255, 255, 0.644);
+  --c-n-008-a42-ln: rgba(15, 23, 42, 0.21);
+  --c-n-008-a44-bg: rgba(255, 255, 255, 0.658);
+  --c-n-008-a44-ln: rgba(15, 23, 42, 0.22);
+  --c-n-008-a46-bg: rgba(255, 255, 255, 0.672);
+  --c-n-008-a48-bg: rgba(255, 255, 255, 0.686);
+  --c-n-008-a50-bg: rgba(255, 255, 255, 0.7);
+  --c-n-008-a52-bg: rgba(255, 255, 255, 0.714);
+  --c-n-008-a54-bg: rgba(255, 255, 255, 0.728);
+  --c-n-008-a56-bg: rgba(255, 255, 255, 0.742);
+  --c-n-008-a56-ln: rgba(15, 23, 42, 0.28);
+  --c-n-008-a58-bg: rgba(255, 255, 255, 0.756);
+  --c-n-008-a60-bg: rgba(255, 255, 255, 0.77);
+  --c-n-008-a62-bg: rgba(255, 255, 255, 0.784);
+  --c-n-008-a64-bg: rgba(255, 255, 255, 0.798);
+  --c-n-008-a66-bg: rgba(255, 255, 255, 0.812);
+  --c-n-008-a68-bg: rgba(255, 255, 255, 0.826);
+  --c-n-008-a70-bg: rgba(255, 255, 255, 0.84);
+  --c-n-008-a72-bg: rgba(255, 255, 255, 0.854);
+  --c-n-008-a74-bg: rgba(255, 255, 255, 0.868);
+  --c-n-008-a76-bg: rgba(255, 255, 255, 0.882);
+  --c-n-008-a78-bg: rgba(255, 255, 255, 0.896);
+  --c-n-008-a80-bg: rgba(255, 255, 255, 0.91);
+  --c-n-008-a82-bg: rgba(255, 255, 255, 0.924);
+  --c-n-008-a82-ln: rgba(15, 23, 42, 0.41);
+  --c-n-008-a84-bg: rgba(255, 255, 255, 0.938);
+  --c-n-008-a84-ln: rgba(15, 23, 42, 0.42);
+  --c-n-008-a86-bg: rgba(255, 255, 255, 0.952);
+  --c-n-008-a86-ln: rgba(15, 23, 42, 0.43);
+  --c-n-008-a88-bg: rgba(255, 255, 255, 0.966);
+  --c-n-008-a90-bg: rgba(255, 255, 255, 0.98);
+  --c-n-008-a90-ln: rgba(15, 23, 42, 0.45);
+  --c-n-008-a92-bg: rgba(255, 255, 255, 0.994);
+  --c-n-008-a92-ln: rgba(15, 23, 42, 0.46);
+  --c-n-008-a94-bg: rgba(255, 255, 255, 1.0);
+  --c-n-008-a96-bg: rgba(255, 255, 255, 1.0);
+  --c-n-008-a98-bg: rgba(255, 255, 255, 1.0);
+  --c-n-012: #f9fafc;
+  --c-n-012-ink: #0f172a;
+  --c-n-016: #fcfcfd;
+  --c-n-016-a48-bg: rgba(255, 255, 255, 0.686);
+  --c-n-016-a52-bg: rgba(255, 255, 255, 0.714);
+  --c-n-016-a56-bg: rgba(255, 255, 255, 0.742);
+  --c-n-016-a62-bg: rgba(255, 255, 255, 0.784);
+  --c-n-016-a70-bg: rgba(255, 255, 255, 0.84);
+  --c-n-016-a72-bg: rgba(255, 255, 255, 0.854);
+  --c-n-016-a72-ln: rgba(15, 23, 42, 0.36);
+  --c-n-016-a78-ln: rgba(15, 23, 42, 0.39);
+  --c-n-016-a82-bg: rgba(255, 255, 255, 0.924);
+  --c-n-016-a88-bg: rgba(255, 255, 255, 0.966);
+  --c-n-016-a90-bg: rgba(255, 255, 255, 0.98);
+  --c-n-016-a92-bg: rgba(255, 255, 255, 0.994);
+  --c-n-016-a94-bg: rgba(255, 255, 255, 1.0);
+  --c-n-016-a94-ln: rgba(15, 23, 42, 0.47);
+  --c-n-016-a96-bg: rgba(255, 255, 255, 1.0);
+  --c-n-016-a96-ln: rgba(15, 23, 42, 0.48);
+  --c-n-016-a98-bg: rgba(255, 255, 255, 1.0);
+  --c-n-016-a98-ln: rgba(15, 23, 42, 0.49);
+  --c-n-016-ink: #1d2330;
+  --c-n-024-a84-bg: rgba(255, 255, 255, 0.938);
+  --c-n-024-a94-ln: rgba(15, 23, 42, 0.5828);
+  --c-n-028-ink: #334155;
+  --c-n-032-a16-ln: rgba(15, 23, 42, 0.0992);
+  --c-n-032-a46-bg: rgba(255, 255, 255, 0.672);
+  --c-n-036-ink: #475569;
+  --c-n-040: #dadfe6;
+  --c-n-040-a08-bg: rgba(15, 23, 42, 0.036);
+  --c-n-040-ink: #55606e;
+  --c-n-048: #626f82;
+  --c-n-048-a06-bg: rgba(15, 23, 42, 0.027);
+  --c-n-048-a12-bg: rgba(15, 23, 42, 0.054);
+  --c-n-048-a14-bg: rgba(15, 23, 42, 0.063);
+  --c-n-048-a16-ln: rgba(15, 23, 42, 0.0992);
+  --c-n-048-a18-ln: rgba(15, 23, 42, 0.1116);
+  --c-n-048-a20-ln: rgba(15, 23, 42, 0.124);
+  --c-n-048-a22-bg: rgba(15, 23, 42, 0.099);
+  --c-n-048-a24-ln: rgba(15, 23, 42, 0.1488);
+  --c-n-048-a28-ln: rgba(15, 23, 42, 0.1736);
+  --c-n-048-a30-ln: rgba(15, 23, 42, 0.186);
+  --c-n-048-a36-ln: rgba(15, 23, 42, 0.2232);
+  --c-n-048-a40-ln: rgba(15, 23, 42, 0.248);
+  --c-n-048-ink: #607792;
+  --c-n-052-ink: #6f86a1;
+  --c-n-056-ink: #7186a4;
+  --c-n-060: #5a6678;
+  --c-n-064: #536177;
+  --c-n-064-a08-bg: rgba(15, 23, 42, 0.036);
+  --c-n-064-a10-bg: rgba(15, 23, 42, 0.045);
+  --c-n-064-a10-ln: rgba(15, 23, 42, 0.062);
+  --c-n-064-a12-bg: rgba(15, 23, 42, 0.054);
+  --c-n-064-a12-ln: rgba(15, 23, 42, 0.0744);
+  --c-n-064-a14-bg: rgba(15, 23, 42, 0.063);
+  --c-n-064-a14-ln: rgba(15, 23, 42, 0.0868);
+  --c-n-064-a16-bg: rgba(15, 23, 42, 0.072);
+  --c-n-064-a16-ln: rgba(15, 23, 42, 0.0992);
+  --c-n-064-a18-bg: rgba(15, 23, 42, 0.081);
+  --c-n-064-a18-fg: rgba(30, 41, 59, 0.18);
+  --c-n-064-a18-ln: rgba(15, 23, 42, 0.1116);
+  --c-n-064-a20-ln: rgba(15, 23, 42, 0.124);
+  --c-n-064-a22-ln: rgba(15, 23, 42, 0.1364);
+  --c-n-064-a24-ln: rgba(15, 23, 42, 0.1488);
+  --c-n-064-a26-ln: rgba(15, 23, 42, 0.1612);
+  --c-n-064-a28-ln: rgba(15, 23, 42, 0.1736);
+  --c-n-064-a32-ln: rgba(15, 23, 42, 0.1984);
+  --c-n-064-a34-ln: rgba(15, 23, 42, 0.2108);
+  --c-n-064-a36-ln: rgba(15, 23, 42, 0.2232);
+  --c-n-064-a38-bg: rgba(15, 23, 42, 0.171);
+  --c-n-064-a40-fg: rgba(30, 41, 59, 0.4);
+  --c-n-064-a44-fg: rgba(30, 41, 59, 0.44);
+  --c-n-064-a48-ln: rgba(15, 23, 42, 0.2976);
+  --c-n-064-a50-bg: rgba(15, 23, 42, 0.225);
+  --c-n-064-a56-bg: rgba(15, 23, 42, 0.252);
+  --c-n-064-a56-fg: rgba(30, 41, 59, 0.56);
+  --c-n-064-a56-ln: rgba(15, 23, 42, 0.3472);
+  --c-n-064-a90-ln: rgba(15, 23, 42, 0.558);
+  --c-n-064-a96-ln: rgba(15, 23, 42, 0.5952);
+  --c-n-064-fill: #94a3b8;
+  --c-n-064-ink: #94a3b8;
+  --c-n-068: #4d5a6e;
+  --c-n-072: #475366;
+  --c-n-072-a08-bg: rgba(15, 23, 42, 0.036);
+  --c-n-072-a10-bg: rgba(15, 23, 42, 0.045);
+  --c-n-072-a14-bg: rgba(15, 23, 42, 0.063);
+  --c-n-072-a16-ln: rgba(15, 23, 42, 0.0992);
+  --c-n-072-a26-ln: rgba(15, 23, 42, 0.1612);
+  --c-n-072-a30-ln: rgba(15, 23, 42, 0.186);
+  --c-n-072-a64-fg: rgba(30, 41, 59, 0.64);
+  --c-n-080: #3b4454;
+  --c-n-080-a36-fg: rgba(30, 41, 59, 0.36);
+  --c-n-080-a38-fg: rgba(30, 41, 59, 0.38);
+  --c-n-080-a42-fg: rgba(30, 41, 59, 0.42);
+  --c-n-080-a76-bg: rgba(15, 23, 42, 0.342);
+  --c-n-080-a96-ln: rgba(15, 23, 42, 0.5952);
+  --c-n-084: #353d4c;
+  --c-n-084-fill: #cbd5e1;
+  --c-n-088: #2f3643;
+  --c-n-088-a76-fg: rgba(30, 41, 59, 0.76);
+  --c-n-088-a78-fg: rgba(30, 41, 59, 0.78);
+  --c-n-088-a82-fg: rgba(30, 41, 59, 0.82);
+  --c-n-088-a84-ln: rgba(15, 23, 42, 0.5208);
+  --c-n-088-a90-ln: rgba(15, 23, 42, 0.558);
+  --c-n-088-a96-ln: rgba(15, 23, 42, 0.5952);
+  --c-n-092: #292f3a;
+  --c-n-096: #232832;
+  --c-n-096-a02-ln: rgba(15, 23, 42, 0.0124);
+  --c-n-096-a04-bg: rgba(15, 23, 42, 0.018);
+  --c-n-096-a04-ln: rgba(15, 23, 42, 0.0248);
+  --c-n-096-a06-bg: rgba(15, 23, 42, 0.027);
+  --c-n-096-a06-ln: rgba(15, 23, 42, 0.0372);
+  --c-n-096-a08-bg: rgba(15, 23, 42, 0.036);
+  --c-n-096-a08-ln: rgba(15, 23, 42, 0.0496);
+  --c-n-096-a10-bg: rgba(15, 23, 42, 0.045);
+  --c-n-096-a12-bg: rgba(15, 23, 42, 0.054);
+  --c-n-096-a12-ln: rgba(15, 23, 42, 0.0744);
+  --c-n-096-a20-ln: rgba(15, 23, 42, 0.124);
+  --c-n-096-a78-bg: rgba(15, 23, 42, 0.351);
+  --c-n-096-a88-bg: rgba(15, 23, 42, 0.396);
+  --c-n-096-a92-bg: rgba(15, 23, 42, 0.414);
+  --c-n-096-a92-ln: rgba(15, 23, 42, 0.5704);
+  --c-n-096-a96-bg: rgba(15, 23, 42, 0.432);
+  --c-n-096-a96-fg: rgba(30, 41, 59, 0.96);
+  --c-n-096-a96-ln: rgba(15, 23, 42, 0.5952);
+  --c-n-096-a98-bg: rgba(15, 23, 42, 0.441);
+  --c-n-096-fill: #f4f5f7;
+  --c-n-100: #1d2129;
+  --c-n-100-fill: #ffffff;
+  --c-p-032-a44-bg: rgba(134, 48, 232, 0.198);
+  --c-p-040-a32-bg: rgba(134, 48, 232, 0.144);
+  --c-p-040-a48-bg: rgba(134, 48, 232, 0.216);
+  --c-p-040-a62-bg: rgba(134, 48, 232, 0.279);
+  --c-p-040-fill: #6b21a8;
+  --c-p-064: #5c09bb;
+  --c-p-064-a12-bg: rgba(134, 48, 232, 0.054);
+  --c-p-064-a22-ln: rgba(107, 31, 193, 0.1584);
+  --c-p-064-a32-bg: rgba(134, 48, 232, 0.144);
+  --c-p-064-a36-ln: rgba(107, 31, 193, 0.2592);
+  --c-p-064-a40-bg: rgba(134, 48, 232, 0.18);
+  --c-p-064-fill: #a855f7;
+  --c-p-072-a48-ln: rgba(107, 31, 193, 0.3456);
+  --c-p-088-a44-ln: rgba(107, 31, 193, 0.3168);
+  --c-p-092: #320269;
+  --c-r-016-a20-bg: rgba(232, 48, 48, 0.09);
+  --c-r-016-a72-bg: rgba(232, 48, 48, 0.324);
+  --c-r-016-a94-bg: rgba(232, 48, 48, 0.423);
+  --c-r-016-a96-bg: rgba(232, 48, 48, 0.432);
+  --c-r-024-a12-bg: rgba(232, 48, 48, 0.054);
+  --c-r-024-a16-bg: rgba(232, 48, 48, 0.072);
+  --c-r-024-a38-bg: rgba(232, 48, 48, 0.171);
+  --c-r-024-a42-bg: rgba(232, 48, 48, 0.189);
+  --c-r-028: #ef8e8e;
+  --c-r-032-a12-bg: rgba(232, 48, 48, 0.054);
+  --c-r-032-a14-bg: rgba(232, 48, 48, 0.063);
+  --c-r-032-a16-bg: rgba(232, 48, 48, 0.072);
+  --c-r-032-a18-bg: rgba(232, 48, 48, 0.081);
+  --c-r-032-a20-bg: rgba(232, 48, 48, 0.09);
+  --c-r-032-a22-bg: rgba(232, 48, 48, 0.099);
+  --c-r-032-a28-bg: rgba(232, 48, 48, 0.126);
+  --c-r-032-a30-bg: rgba(232, 48, 48, 0.135);
+  --c-r-032-a36-bg: rgba(232, 48, 48, 0.162);
+  --c-r-032-a38-bg: rgba(232, 48, 48, 0.171);
+  --c-r-032-a42-bg: rgba(232, 48, 48, 0.189);
+  --c-r-032-a44-bg: rgba(232, 48, 48, 0.198);
+  --c-r-032-a56-bg: rgba(232, 48, 48, 0.252);
+  --c-r-032-a70-bg: rgba(232, 48, 48, 0.315);
+  --c-r-032-fill: #7f1d1d;
+  --c-r-036-fill: #991b1b;
+  --c-r-036-ink: #991b1b;
+  --c-r-040-a04-bg: rgba(232, 48, 48, 0.018);
+  --c-r-040-a08-bg: rgba(232, 48, 48, 0.036);
+  --c-r-040-a44-ln: rgba(193, 31, 31, 0.3168);
+  --c-r-040-a92-ln: rgba(193, 31, 31, 0.6624);
+  --c-r-040-ink: #b3261e;
+  --c-r-048-a10-bg: rgba(232, 48, 48, 0.045);
+  --c-r-048-a18-ln: rgba(193, 31, 31, 0.1296);
+  --c-r-048-a34-bg: rgba(232, 48, 48, 0.153);
+  --c-r-048-a56-ln: rgba(193, 31, 31, 0.4032);
+  --c-r-052: #ca2121;
+  --c-r-056-a16-bg: rgba(232, 48, 48, 0.072);
+  --c-r-056-a44-ln: rgba(193, 31, 31, 0.3168);
+  --c-r-060: #c01010;
+  --c-r-060-fill: #ef4444;
+  --c-r-064-a08-bg: rgba(232, 48, 48, 0.036);
+  --c-r-064-a10-ln: rgba(193, 31, 31, 0.072);
+  --c-r-064-a12-bg: rgba(232, 48, 48, 0.054);
+  --c-r-064-a14-bg: rgba(232, 48, 48, 0.063);
+  --c-r-064-a16-bg: rgba(232, 48, 48, 0.072);
+  --c-r-064-a18-bg: rgba(232, 48, 48, 0.081);
+  --c-r-064-a20-bg: rgba(232, 48, 48, 0.09);
+  --c-r-064-a22-bg: rgba(232, 48, 48, 0.099);
+  --c-r-064-a22-ln: rgba(193, 31, 31, 0.1584);
+  --c-r-064-a26-bg: rgba(232, 48, 48, 0.117);
+  --c-r-064-a28-ln: rgba(193, 31, 31, 0.2016);
+  --c-r-064-a32-ln: rgba(193, 31, 31, 0.2304);
+  --c-r-064-a36-ln: rgba(193, 31, 31, 0.2592);
+  --c-r-064-a42-ln: rgba(193, 31, 31, 0.3024);
+  --c-r-064-a50-ln: rgba(193, 31, 31, 0.36);
+  --c-r-064-a88-fill: rgba(239, 68, 68, 0.88);
+  --c-r-072: #a20808;
+  --c-r-072-a12-ln: rgba(193, 31, 31, 0.0864);
+  --c-r-072-a16-bg: rgba(232, 48, 48, 0.072);
+  --c-r-072-a16-ln: rgba(193, 31, 31, 0.1152);
+  --c-r-072-a20-ln: rgba(193, 31, 31, 0.144);
+  --c-r-072-a22-ln: rgba(193, 31, 31, 0.1584);
+  --c-r-072-a24-ln: rgba(193, 31, 31, 0.1728);
+  --c-r-072-a28-ln: rgba(193, 31, 31, 0.2016);
+  --c-r-072-a30-ln: rgba(193, 31, 31, 0.216);
+  --c-r-072-a32-ln: rgba(193, 31, 31, 0.2304);
+  --c-r-072-a34-ln: rgba(193, 31, 31, 0.2448);
+  --c-r-072-a36-ln: rgba(193, 31, 31, 0.2592);
+  --c-r-072-a38-ln: rgba(193, 31, 31, 0.2736);
+  --c-r-072-a40-ln: rgba(193, 31, 31, 0.288);
+  --c-r-072-a42-ln: rgba(193, 31, 31, 0.3024);
+  --c-r-072-a44-ln: rgba(193, 31, 31, 0.3168);
+  --c-r-072-a46-ln: rgba(193, 31, 31, 0.3312);
+  --c-r-072-a48-ln: rgba(193, 31, 31, 0.3456);
+  --c-r-072-a50-ln: rgba(193, 31, 31, 0.36);
+  --c-r-072-a52-ln: rgba(193, 31, 31, 0.3744);
+  --c-r-072-a58-ln: rgba(193, 31, 31, 0.4176);
+  --c-r-072-a62-ln: rgba(193, 31, 31, 0.4464);
+  --c-r-072-a68-ln: rgba(193, 31, 31, 0.4896);
+  --c-r-072-a72-ln: rgba(193, 31, 31, 0.5184);
+  --c-r-072-fill: #fb7185;
+  --c-r-080: #8c0505;
+  --c-r-088: #750202;
+  --c-r-096: #5b0303;
+  --c-r-096-a96-bg: rgba(232, 48, 48, 0.432);
+  --c-y-076: #9b7503;
+  --c-a-032-a04-bg: rgba(232, 146, 48, 0.018);
+  --c-a-032-a06-bg: rgba(232, 146, 48, 0.027);
+  --c-a-032-a10-bg: rgba(232, 146, 48, 0.045);
+  --c-a-032-a20-bg: rgba(232, 146, 48, 0.09);
+  --c-a-032-a28-bg: rgba(232, 146, 48, 0.126);
+  --c-a-048-ink: #d0a52a;
+  --c-b-036: #8da7d9;
+  --c-b-040-a20-bg: rgba(48, 113, 232, 0.09);
+  --c-b-040-a28-bg: rgba(48, 113, 232, 0.126);
+  --c-g-040-a20-bg: rgba(48, 232, 116, 0.09);
+  --c-n-048-a16-bg: rgba(15, 23, 42, 0.072);
+  --c-n-048-a18-bg: rgba(15, 23, 42, 0.081);
+  --c-n-048-a20-bg: rgba(15, 23, 42, 0.09);
+  --c-n-048-a22-ln: rgba(15, 23, 42, 0.1364);
+  --c-r-048: #a13535;
+  --c-r-048-a12-bg: rgba(232, 48, 48, 0.054);
+  --c-r-048-a20-bg: rgba(232, 48, 48, 0.09);
+  /* --- I passi che la scheda prodotto Pratesi ha aggiunto ---
+   * Prodotti da `palette.classify()`, non scelti a mano: sono i tre
+   * letterali della tappa 1 che non cadevano su nessun passo gia'
+   * presente. Il valore scuro e' quello che il foglio aveva gia' —
+   * il tema scuro non cambia aspetto — e il valore chiaro esce dalla
+   * curva della famiglia. */
+  --c-b-040-ink: #1b5fa8;
+  /* --- Il passo che il calendario R1 dello Scadenziario ha aggiunto ---
+   * Prodotto da `codemod.transform()` sul foglio dello Scadenziario,
+   * non scelto a mano: `.scad-cal-cell.is-out:hover` e' l'unica
+   * velatura del calendario che non cadesse su un passo gia'
+   * presente. Il valore scuro e' quello che il foglio aveva gia'. */
+  --c-b-056-a04-bg: rgba(48, 113, 232, 0.018);
+  --c-b-056-a06-bg: rgba(48, 113, 232, 0.027);
+  --c-n-048-a80-fg: rgba(30, 41, 59, 0.8);
+}
+
+/* NON C'E' UN TERZO VALORE, E QUI STAVA SCRITTO CHE C'ERA.
+ *
+ * Fin qui viveva una regola su `:root[data-ares-theme="auto"]`, per «chi
+ * non ha ancora scelto segue il sistema». Non poteva scattare mai:
+ * `resolve_theme()` restituisce `dark` o `light` e nient'altro — un
+ * cookie assente, vuoto o manomesso ricade su `dark` — e `theme.js`
+ * normalizza allo stesso modo. `auto` non compariva in nessun byte di
+ * HTML che ARES abbia mai mandato.
+ *
+ * La decisione vera e' che ARES nasce SCURO: chi non ha scelto vede il
+ * tema storico del prodotto, non quello del suo sistema operativo. Una
+ * regola morta che dice il contrario e' peggio dell'assenza, perche' la
+ * prossima persona la legge e crede che la preferenza di sistema sia gia'
+ * onorata. Se un giorno lo sara' davvero, il posto e' questo — e servira'
+ * un terzo valore in `resolve_theme`, non solo in un foglio di stile. */
+
+/* Il corpo dipinge il fondo del tema. Senza questo, la pagina eredita il
+ * bianco dell'agente utente sotto i pannelli semitrasparenti, ed e' il
+ * modo in cui un tema chiaro «quasi funzionante» mostra bordi bianchi
+ * dove il tema scuro non ne aveva. */
+html,
+body {
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+/* Il focus. Al buio era un anello azzurro su fondo scuro; sul chiaro lo
+ * stesso azzurro sparirebbe. Il token lo segue, e l'anello resta di due
+ * pixel pieni invece di essere affidato all'ombra, che su fondo chiaro
+ * si perde. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+::placeholder {
+  color: var(--input-placeholder);
+  opacity: 1;
+}
+
+/* La barra di scorrimento personalizzata. `color-scheme` sistema quella
+ * nativa; questa regola serve ai contenitori che ne dichiarano una
+ * propria. */
+* {
+  scrollbar-color: var(--border-strong) transparent;
+}
