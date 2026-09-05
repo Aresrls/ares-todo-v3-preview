@@ -30,6 +30,7 @@
   "use strict";
 
   var CHIAVE = "ares.todo-v3.fuoco";
+  var CHIAVE_APERTURA = "ares.todo-v3.apertura";
   var VITA_MS = 15000;
 
   function radice() {
@@ -102,12 +103,73 @@
     if (document.querySelector("[data-tv3-drawer]")) {
       return;
     }
-    var riga = document.querySelector(
-      '[data-tv3-riga][data-tv3-todo="' + id + '"] .todo-v3-nome'
+    /* L'identificativo si legge sull'ANCORA, che e' l'elemento che
+     * prende il fuoco: cosi' chi misura puo' verificare che il fuoco sia
+     * tornato su QUELLA riga e non su una qualunque. */
+    var bersaglio = document.querySelector(
+      'a.todo-v3-nome[data-tv3-todo="' + id + '"]'
     );
-    if (riga) {
-      riga.focus();
+    if (bersaglio) {
+      bersaglio.focus();
     }
+  }
+
+  function segnaApertura(idTodo) {
+    if (!idTodo) {
+      return;
+    }
+    try {
+      window.sessionStorage.setItem(
+        CHIAVE_APERTURA,
+        JSON.stringify({ id: String(idTodo), t: Date.now() })
+      );
+    } catch (e) {
+      /* Archiviazione negata: il fuoco non entra, e il drawer resta
+       * raggiungibile con la tastiera come qualunque altro contenuto. */
+    }
+  }
+
+  function leggiAperturaUnaVolta() {
+    var grezzo = null;
+    try {
+      grezzo = window.sessionStorage.getItem(CHIAVE_APERTURA);
+      window.sessionStorage.removeItem(CHIAVE_APERTURA);
+    } catch (e) {
+      return null;
+    }
+    if (!grezzo) {
+      return null;
+    }
+    var dato = null;
+    try {
+      dato = JSON.parse(grezzo);
+    } catch (e) {
+      return null;
+    }
+    if (!dato || !dato.id || typeof dato.t !== "number") {
+      return null;
+    }
+    if (Date.now() - dato.t > VITA_MS) {
+      return null;
+    }
+    return dato.id;
+  }
+
+  function entraNelDrawer() {
+    var id = leggiAperturaUnaVolta();
+    if (!id) {
+      return false;
+    }
+    var chiudi = chiusuraDelDrawer();
+    /* Il drawer aperto dev'essere QUELLO che si e' chiesto di aprire: se
+     * il server ne ha reso un altro — la To-Do non e' piu' leggibile e
+     * l'elenco ha ripiegato — spostare il fuoco la' dentro porterebbe
+     * l'operatore su una cosa che non ha scelto. */
+    if (!chiudi || chiudi.getAttribute("data-tv3-chiudi") !== String(id)) {
+      return false;
+    }
+    chiudi.focus();
+    return true;
   }
 
   function suTasto(evento) {
@@ -137,16 +199,34 @@
 
     document.addEventListener("keydown", suTasto);
 
-    /* Anche il clic sul comando visibile segna il fuoco: la tastiera e
-     * il mouse devono lasciare la stessa pagina nello stesso stato. */
-    var chiudi = chiusuraDelDrawer();
-    if (chiudi) {
-      chiudi.addEventListener("click", function () {
-        segnaFuoco(chiudi.getAttribute("data-tv3-chiudi"));
+    /* Anche il clic segna il fuoco, e su TUTTE le chiusure: il comando
+     * visibile e il velo portano lo stesso indirizzo, quindi devono
+     * lasciare la pagina nello stesso stato. Agganciarne una sola
+     * produce un ritorno del fuoco che funziona a volte, ed e' peggio di
+     * uno che non funziona mai: sembra un comportamento del browser. */
+    var chiusure = document.querySelectorAll("[data-tv3-chiudi]");
+    Array.prototype.forEach.call(chiusure, function (nodo) {
+      nodo.addEventListener("click", function () {
+        segnaFuoco(nodo.getAttribute("data-tv3-chiudi"));
       });
-    }
+    });
 
-    riportaIlFuoco();
+    /* Le righe segnano l'APERTURA: e' il verso opposto del segno di
+     * chiusura, e i due non si incontrano mai — uno si scrive dove il
+     * drawer non c'e', l'altro dove c'e'. */
+    var aperture = document.querySelectorAll("[data-tv3-riga] .todo-v3-nome");
+    Array.prototype.forEach.call(aperture, function (nodo) {
+      nodo.addEventListener("click", function () {
+        segnaApertura(nodo.getAttribute("data-tv3-todo"));
+      });
+    });
+
+    /* Prima si prova a ENTRARE, e solo se non c'e' un'apertura da
+     * onorare si prova a TORNARE: i due segni sono distinti, ma leggerli
+     * nell'ordine sbagliato consumerebbe quello sbagliato. */
+    if (!entraNelDrawer()) {
+      riportaIlFuoco();
+    }
   }
 
   if (document.readyState === "loading") {

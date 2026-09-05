@@ -347,15 +347,23 @@
   background: var(--overlay);
   z-index: 30;
 }
+/* IL RIQUADRO E' QUELLO DELLA DEMO APPROVATA, misurato sul suo foglio e
+ * non descritto a memoria: `top/right/bottom: 12px`, larghezza
+ * `min(510px, 100vw - 24px)`, raggio 12px, bordo su tutti i lati.
+ * Prima era incollato al bordo, largo 480 e senza raggio — quattro
+ * numeri di differenza da cio' che il proprietario ha approvato.
+ * Sotto la soglia compatta torna a tutto schermo: li' i due disegni
+ * gia' coincidevano. */
 .todo-v3-drawer {
   position: fixed;
-  top: 0; right: 0; bottom: 0;
+  top: 12px; right: 12px; bottom: 12px;
   z-index: 31;
-  width: min(480px, 100vw);
+  width: min(510px, calc(100vw - 24px));
   display: flex;
   flex-direction: column;
   background: var(--surface-elevated);
-  border-left: 1px solid var(--border-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--v3-raggio);
   box-shadow: -18px 0 40px var(--ombra-media);
   overflow-y: auto;
   overflow-x: hidden;
@@ -639,9 +647,14 @@ kbd {
   .todo-v3-nav .todo-v3-viste a { white-space: nowrap; }
   .todo-v3-nuova { width: auto; flex: 0 0 auto; padding: 10px 12px; }
   .todo-v3-drawer {
+    /* A tutto schermo, e i quattro lati tornano a zero: senza
+     * annullare anche `top`/`right`/`bottom` il pannello resterebbe
+     * staccato di 12px dai bordi proprio dove lo schermo e' piu'
+     * stretto. */
+    top: 0; right: 0; bottom: 0; left: 0;
     width: 100vw;
-    left: 0;
-    border-left: 0;
+    border: 0;
+    border-radius: 0;
   }
   .todo-v3-rapido { top: 0; left: 0; transform: none; width: 100vw; border-radius: 0; }
   .todo-v3-proprieta { grid-template-columns: 1fr; gap: 4px; }
